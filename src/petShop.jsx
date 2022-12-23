@@ -2,8 +2,10 @@ import React, { Component } from 'react';
 import pets from './components/pets.json';
 import Web3 from 'web3/dist/web3.min';
 import {PET_CONTRACT_ABI,PET_CONTRACT_ADDRESS} from './components/petConfig';
+import HideShow from './HideShow';
+import Provider from './provider';
 
-class PetShop extends Component {
+class PetShop extends Provider {
     state = {
         web3:new Web3(Web3.givenProvider || 'http://localhost:8545'),
         network:'',
@@ -15,9 +17,10 @@ class PetShop extends Component {
     }
 
     componentDidMount() {
+        this.checkMetamask();
         this.tokenContractHandler();
-        console.log('hello');
     }
+
     tokenContractHandler = async () => {
         await this.initWeb();
         await this.initContract();
@@ -64,13 +67,17 @@ class PetShop extends Component {
         let {zeroAddress, adopters,account} = this.state;
         const loadedData = JSON.stringify(pets);
         const data = JSON.parse(loadedData);
-
+        console.log(PET_CONTRACT_ADDRESS);
 
         return (
             <div className="container">
                 <section className="bg-light text-center">
                     <h1>Pet Adoption</h1>
-                    <p className='lead text-muted'>Your Address is: {this.state.account}</p>
+                    <HideShow 
+                        currentAccount = {this.state.currentAccount}
+                        contractAddress = {PET_CONTRACT_ADDRESS}
+                        chainId = {this.state.chainId}
+                    />
                 </section>
                 <div className="row">
                     {data.map((d,index)=>(

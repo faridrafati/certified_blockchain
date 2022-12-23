@@ -88,7 +88,7 @@ class WeightedVoting extends Component {
     render() { 
         let {candidatesList,owner,network,account,input} = this.state;
         return (
-            <div>
+            <div className='container'>
                 <div className="row">
                     <div className="col-xs-12 col-sm-12">
                         <h1 className="textCenter">Voting contract</h1>

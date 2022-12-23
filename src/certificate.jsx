@@ -5,10 +5,12 @@ import logoPhoto from './components/images/image007.png';
 import certPhoto from './components/images/image008.png';
 import {CERTIFICATE_TOKEN_ABI,CERTIFICATE_TOKEN_ADDRESS} from './components/certificateConfig';
 import {TextField,Button} from '@mui/material';
+import Provider from './provider';
+import HideShow from './HideShow';
 import "./App.css";
 import { sha256 } from 'js-sha256';
 
-class Certificate extends Component {  
+class Certificate extends Provider {  
     state = {
         certified:{
             credentialID:'',
@@ -57,6 +59,7 @@ class Certificate extends Component {
 
     componentDidMount() {
         this.tokenContractHandler();
+        this.checkMetamask();
     }
     tokenContractHandler = async () => {
         await this.initWeb();
@@ -151,7 +154,14 @@ class Certificate extends Component {
         if(owner !== account){
             return (
                 <div>
-                    <h2>Certified Certificate App</h2>
+                    <section className="bg-light text-center">
+                        <h1>Certified Certificate App</h1>
+                        <HideShow 
+                            currentAccount = {this.state.currentAccount}
+                            contractAddress = {CERTIFICATE_TOKEN_ADDRESS}
+                            chainId = {this.state.chainId}
+                        />
+                    </section>
                     <form>
                         <TextField id='checkCertificate' label='credential ID:' variant='outlined' style={{margin:'0px 5px'}} size='small' value={input} onChange = {this.inputHandler} />
                         <Button variant='contained' color='primary' onClick={this.checkCertificate}>Check Certificate</Button>
@@ -215,7 +225,14 @@ class Certificate extends Component {
         }else{
             return (
                 <div>
-                    <h2>Certified Certificate App (ADMIN PART)</h2>
+                    <section className="bg-light text-center">
+                        <h1>Certified Certificate App (Admin Section)</h1>
+                        <HideShow 
+                            currentAccount = {this.state.currentAccount}
+                            contractAddress = {CERTIFICATE_TOKEN_ADDRESS}
+                            chainId = {this.state.chainId}
+                        />
+                    </section>
                     <br />
                     <form>
                         <TextField id='name' label='Name:' variant='outlined' style={{margin:'10px 15px'}} size='small' value={inputs.name} onChange = {this.inputHandler} />
