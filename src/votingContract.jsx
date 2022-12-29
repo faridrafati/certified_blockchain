@@ -1,107 +1,120 @@
 import React, { Component } from 'react';
 import Web3 from 'web3/dist/web3.min';
 import {VOTING_CONTRACT_ABI,VOTING_CONTRACT_ADDRESS} from './components/Voting_Config';
+import resetProvider from './resetProvider';
+import HideShow from './HideShow';
+import Select from './components/pollCommon/select';
+import { ToastContainer, toast } from 'react-toastify';
+  import 'react-toastify/dist/ReactToastify.css';
 
-class VotingContract extends Component {
+class VotingContract extends resetProvider {
     state = {
-        account:'',
+        web3 : new Web3(Web3.givenProvider || 'http://localhost:8545'),
         network:'',
+        account:'',
+        Contract:'',
         button: 1,
         numberC: 0,
         candidates:[{
             address:'',
             votes:''
         }],
-        votingContract:'',
+
         data:''
-      };
-    
+    };
+
+    componentDidMount = () => {
+        this.checkMetamask();
+        this.tokenContractHandler();
+    }
+
+    tokenContractHandler = async () => {
+        await this.initWeb();
+        await this.initContract(VOTING_CONTRACT_ABI,VOTING_CONTRACT_ADDRESS);
+        await this.extraInitContract();
+    }
+
+    extraInitContract = async () => {
+        let {Contract} = this.state;
+        const numberC = parseInt(await Contract.methods.numberOfCandidates().call());
+        let candidates = this.state.candidates;
+        let candidateList = [];
+        for (var i=0; i<numberC; i++) {
+            let address = await Contract.methods.Candidates(i).call();  // Retrieve address of each candidate
+            let votes = await Contract.methods.VotesForCandidate(address).call(); // Retrieve votes of candidate
+            candidates[i]={address : address.toString() , votes : votes.toString()};
+        }
+        this.setState({candidateList,candidates,numberC});
+    }
+
     onSubmit = e => {
         e.preventDefault();
         if (this.state.button === 'Vote') {
-            this.voteForCandidate(this.state.candidates[0].address);
+            this.voteForCandidate();
         }
         if (this.state.button === 'AddCandidate') {
-          this.addCandidate('0x7b46fb5fd9D759AD5e2Cb59f4956Bb99c6D225Dd');
+          this.addCandidate();
         }
     };
 
 
     voteForCandidate = async() => {
         let address = this.state.data['voteFor'];
-        let votingContract = this.state.votingContract;
-        await votingContract.methods.voteForCandidate(address).send({from: (this.state.account), gas: '1000000'},(error,result) => {
+        let {Contract} = this.state;
+        this.notify();
+        await Contract.methods.voteForCandidate(address).send({from: (this.state.account), gas: '1000000'},(error,result) => {
           if(!error){
-            console.log("it worked voteForCandidate: " +result);
+            console.log("it worked: " +result);
           }else{
             console.log("err-->"+error);
+            
           }
       
         });
         console.log('voteForCandidate');
-        this.refreshPage();
-    }
-      
+    }    
 
     addCandidate = async() => {
         let address = this.state.data['addCandidate'];
-        let votingContract = this.state.votingContract;
-        await votingContract.methods.addCandidate(address).send({from: (this.state.account), gas: '1000000'},(error,result) => {
+        let {Contract} = this.state;
+        await Contract.methods.addCandidate(address).send({from: (this.state.account), gas: '1000000'},(error,result) => {
           if(!error){
-            console.log("it worked voteForCandidate: " +result);
+            console.log("it worked: " +result);
           }else{
             console.log("err-->"+error);
           }
       
         });
         console.log('voteForCandidate');
-        this.refreshPage();
       }
-
-
-
-    votingContractHandler = async () => {
-
-        const web3 = new Web3(Web3.givenProvider || 'http://localhost:8545');
-        const network = await web3.eth.net.getNetworkType();
-        const accounts = await web3.eth.getAccounts();
-        this.setState({account: accounts[0],network});
-        const votingContract = new web3.eth.Contract(VOTING_CONTRACT_ABI,VOTING_CONTRACT_ADDRESS);
-        this.setState({votingContract});
-        const numberC = parseInt(await votingContract.methods.numberOfCandidates().call());
-
-
-
-        let candidates = this.state.candidates;
-        let candidateList = [];
-        for (var i=0; i<numberC; i++) {
-
-            let address = await votingContract.methods.Candidates(i).call();  // Retrieve address of each candidate
-            let votes = await votingContract.methods.VotesForCandidate(address).call(); // Retrieve votes of candidate
-            candidates[i]={address : address.toString() , votes : votes.toString()};
-        }
-        this.setState({candidateList,candidates,numberC});
-    }
-
-
-    componentDidMount = () => {
-        this.votingContractHandler();
-    }
 
     handleChange = ({ currentTarget: input }) => {
         const data = { ...this.state.data };
         data[input.name] = input.value;
-        this.setState({ data });
+        if(data.voteFor !== 'Open this select menu'){
+            this.setState({ data });
+        }
     };
-    refreshPage = () => { 
-        window.location.reload(); 
-    }
+
+    notify = () => {
+        
+        toast("Wow so easy!")
+    };
+
 
     render() {
+        let {data} = this.state;
         return (
             <div className="container">
-                <h1>Voting Contract</h1>
-                <p>Your Address is {this.state.account} on {this.state.network} Chain</p>
+                <ToastContainer />
+                <section className="bg-light text-center">
+                    <h1>Voting Application</h1>
+                    <HideShow 
+                        currentAccount = {this.state.currentAccount}
+                        contractAddress = {VOTING_CONTRACT_ADDRESS}
+                        chainId = {this.state.chainId}
+                    />
+                </section>
                 <div >
                     <h2>Candidates</h2>
                     <table className="table table-bordered">
@@ -130,38 +143,7 @@ class VotingContract extends Component {
                     </table>
                 </div>
                 <form onSubmit={this.onSubmit}>
-                    <div className="row g-3 align-items-center mb-3">
-                        <div className="col-auto">
-                            <label 
-                                htmlFor="voteFor" 
-                                className="col-form-label">
-                                    Vote For
-                            </label>
-                        </div>
-                        <div className="col-auto">
-                            <input 
-                                type="text" 
-                                id="voteFor"
-                                name="voteFor"
-                                className="form-control"
-                                value={this.state.data['voteFor']}
-                                onChange={this.handleChange} 
-                            />
-                        </div>
-                        <div className="col-auto">
-                            <button 
-                                id="voteFor" 
-                                className="btn btn-primary"
-                                onClick={() => (this.setState({button : 'Vote'}))}
-                                type="submit"
-                                name="voteFor"
-                            >
-                                Vote
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div className="row g-3 align-items-center mb-3">
+                <div className="row g-3 align-items-center mb-3">
                         <div className="col-auto">
                             <label 
                                 htmlFor="addCandidate" 
@@ -169,13 +151,14 @@ class VotingContract extends Component {
                                     Add Candidate
                             </label>
                         </div>
-                        <div className="col-auto">
+                        <div className="col-4">
                             <input 
                                 type="text" 
                                 id="addCandidate"
                                 name="addCandidate"
                                 className="form-control"
-                                value={this.state.data['addCandidate']}
+                                placeholder='Address'
+                                value={data['addCandidate']}
                                 onChange={this.handleChange} 
                             />
                         </div>
@@ -191,7 +174,27 @@ class VotingContract extends Component {
                             </button>
                         </div>
                     </div>
-
+                    <div className="row g-3 align-items-center mb-3">
+                        <div className="col-auto">
+                            <label 
+                                htmlFor="voteFor" 
+                                className="col-form-label">
+                                    Vote For
+                            </label>
+                        </div>
+                        <Select className="col-4" name='voteFor' options={this.state.candidates} onChange={this.handleChange} />
+                        <div className="col-auto">
+                            <button 
+                                id="voteFor" 
+                                className="btn btn-primary"
+                                onClick={() => (this.setState({button : 'Vote'}))}
+                                type="submit"
+                                name="voteFor"
+                            >
+                                Vote
+                            </button>
+                        </div>
+                    </div>
                 </form>
             </div>
         );

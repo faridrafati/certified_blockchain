@@ -3,58 +3,51 @@ import Web3 from 'web3/dist/web3.min';
 import {TextField,Button} from '@mui/material';
 import {TODO_TOKEN_ABI,TODO_TOKEN_ADDRESS} from './components/TodoConfig';
 import Listing from './Listing';
+import resetProvider from './resetProvider';
+import HideShow from './HideShow';
 
-class Task extends Component {
+class Task extends resetProvider {
     state = {
         web3:new Web3(Web3.givenProvider || 'http://localhost:8545'),
         network:'',
-        todoContract:'',
-        isMetaMask:'', 
-        tasks:[],
-        input:"",
         account:"",
+        Contract:'',
+        isMetaMask:'',
+        owner:'', 
+        tasks:[],
+        inputs:{
+            tasks:"",
+            date:""
+        },
         status:''
     }
 
     componentDidMount() {
+        this.checkMetamask();
         this.tokenContractHandler();
     }
     tokenContractHandler = async () => {
         await this.initWeb();
-        await this.initContract();
+        await this.initContract(TODO_TOKEN_ABI,TODO_TOKEN_ADDRESS);
         await this.getAllTasks();
     }
     
-    initWeb = async () => {
-        let {web3} = this.state;
-        const network = await web3.eth.net.getNetworkType();
-        const accounts = await web3.eth.getAccounts();
-        let account = accounts[0];
-        this.setState({web3,network,account});
-    }
-
-    initContract = async () => {
-        let {web3} = this.state;
-        let todoContract = new web3.eth.Contract(TODO_TOKEN_ABI,TODO_TOKEN_ADDRESS);
-        let isMetaMask = await web3.currentProvider.isMetaMask;
-        this.setState({todoContract,isMetaMask});
-    }
-
     inputHandler = (e) => {
-        let input = this.state.input;
-        input = e.currentTarget.value;
-        this.setState({input});
+        let {inputs} = this.state;
+        inputs[e.currentTarget.id] = e.currentTarget.value;
+        this.setState({inputs});
     }
 
     addTasks = async (e) => {
-        let {input,todoContract,account} = this.state;
+        let {inputs,Contract,account} = this.state;
         e.preventDefault();
         let task = {
-            'taskText':input,
+            'taskText':inputs.tasks+' @ '+inputs.date,
             'isDeleted':false
         }
+        console.log(task.taskText);
         
-        await todoContract.methods.addTask(task.taskText,task.isDeleted).send({from: (account), gas: '1000000'},(error) => {
+        await Contract.methods.addTask(task.taskText,task.isDeleted).send({from: (account), gas: '1000000'},(error) => {
             if(!error){
                 console.log('task has been added');
             }else{
@@ -64,8 +57,8 @@ class Task extends Component {
     }
 
     deleteTask = async(taskId) => {
-        let {todoContract,account} = this.state;
-        await todoContract.methods.deleteTask(taskId,true).send({from: (account), gas: '1000000'},(error) => {
+        let {Contract,account} = this.state;
+        await Contract.methods.deleteTask(taskId,true).send({from: (account), gas: '1000000'},(error) => {
             if(!error){
                 console.log('task has been deleted');
             }else{
@@ -75,20 +68,28 @@ class Task extends Component {
     }
 
     getAllTasks =async() => {
-        let {todoContract,account} = this.state;
-        let tasks = await todoContract.methods.getMyTasks().call({from: account});
+        let {Contract,account} = this.state;
+        let tasks = await Contract.methods.getMyTasks().call({from: account});
         this.setState({tasks});
     }
 
     render() {
-        let {input,tasks} = this.state;
+        let {inputs,tasks} = this.state;
         
         return (
-            <div>
-                <h2>Task Management App</h2>
+            <div className="container">
+                <section className="bg-light text-center">
+                    <h1>Todo Manager</h1>
+                    <HideShow 
+                        currentAccount = {this.state.currentAccount}
+                        contractAddress = {TODO_TOKEN_ADDRESS}
+                        chainId = {this.state.chainId}
+                    />
+                </section>
                 <form>
-                    <TextField id='outlined-basic' label='Make Todo' variant='outlined' style={{margin:'0px 5px'}} size='small' value={input} onChange = {this.inputHandler} />
-                    <Button variant='contained' color='primary' onClick={this.addTasks}>Add Task</Button>
+                    <TextField className = 'm-2' id='tasks' label='Make Todo' variant='outlined' style={{margin:'0px 5px'}} size='small' value={inputs.tasks} onChange = {this.inputHandler} />
+                    <TextField className = 'm-2' id="date" label="Date & Time" type="datetime-local" size='small' value={inputs.date} onChange = {this.inputHandler} InputLabelProps={{shrink: true,}} />
+                    <Button className = 'm-2' variant='contained' color='primary' onClick={this.addTasks}>Add Task</Button>
                     <br /><br />
                 </form>
                 <ul>

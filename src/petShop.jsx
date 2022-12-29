@@ -1,17 +1,18 @@
-import React, { Component } from 'react';
+import React from 'react';
 import pets from './components/pets.json';
 import Web3 from 'web3/dist/web3.min';
 import {PET_CONTRACT_ABI,PET_CONTRACT_ADDRESS} from './components/petConfig';
 import HideShow from './HideShow';
-import Provider from './provider';
+import resetProvider from './resetProvider';
 
-class PetShop extends Provider {
+class PetShop extends resetProvider {
     state = {
         web3:new Web3(Web3.givenProvider || 'http://localhost:8545'),
         network:'',
         account:'',
-        petContract:[],
+        Contract:[],
         isMetaMask:'',
+        owner:'',
         adopters:[],
         zeroAddress:'0x0000000000000000000000000000000000000000'
     }
@@ -23,36 +24,21 @@ class PetShop extends Provider {
 
     tokenContractHandler = async () => {
         await this.initWeb();
-        await this.initContract();
+        await this.initContract(PET_CONTRACT_ABI,PET_CONTRACT_ADDRESS);
         this.getAllAdopters();
     }
     
-    initWeb = async () => {
-        let {web3} = this.state;
-        const network = await web3.eth.net.getNetworkType();
-        const accounts = await web3.eth.getAccounts();
-        let account = accounts[0];
-        this.setState({web3,network,account});
-    }
-
-    initContract = async () => {
-        let {web3} = this.state;
-        let petContract = new web3.eth.Contract(PET_CONTRACT_ABI,PET_CONTRACT_ADDRESS);
-        let isMetaMask = await web3.currentProvider.isMetaMask;
-        this.setState({isMetaMask,petContract});
-    }
-
     getAllAdopters =async() => {
-        let {petContract,account} = this.state;
-        let adopters = await petContract.methods.getAdoptors().call({from: account});
+        let {Contract,account} = this.state;
+        let adopters = await Contract.methods.getAdoptors().call({from: account});
         this.setState({adopters});
     }
 
     Adopt = async (index) => {
-        let {petContract,account} = this.state;
+        let {Contract,account} = this.state;
 
         
-        await petContract.methods.adopt(index).send({from: (account), gas: '1000000'},(error) => {
+        await Contract.methods.adopt(index).send({from: (account), gas: '1000000'},(error) => {
             if(!error){
                 console.log('pet has been adopted');
             }else{
@@ -67,7 +53,6 @@ class PetShop extends Provider {
         let {zeroAddress, adopters,account} = this.state;
         const loadedData = JSON.stringify(pets);
         const data = JSON.parse(loadedData);
-        console.log(PET_CONTRACT_ADDRESS);
 
         return (
             <div className="container">

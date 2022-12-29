@@ -15,7 +15,8 @@ class HideShow extends Component {
     }
   invokeCollapse = () => {
     this.setState({ isVisible : ! this.state.isVisible})
-  } 
+  }
+  
   render() {
     const chains = this.state.chain;
     let webAddress = '';
@@ -43,7 +44,7 @@ class HideShow extends Component {
           Your Address is: {this.props.currentAccount} </a>
           </p>
           <p>
-          <a className="link-dark"href={'https://'+webAddress+'etherscan.io/address/'+this.props.contractAddress}  target='_blank' rel="noreferrer" type="addressLinks">
+          <a className="link-dark"href={'https://'+webAddress+'etherscan.io/address/'+this.props.contractAddress+'#readContract'}  target='_blank' rel="noreferrer" type="addressLinks">
           Your Contract Address is: {this.props.contractAddress}</a>
           </p>
         </div>

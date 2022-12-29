@@ -1,47 +1,51 @@
 import React, { Component } from 'react';
 import Web3 from 'web3/dist/web3.min';
 import {CODER_TOKEN_ABI,CODER_TOKEN_ADDRESS} from './components/Token_config';
+import HideShow from './HideShow';
+import resetProvider from './resetProvider';
 
-class CoderToken extends Component {
+class CoderToken extends resetProvider {
     state = { 
-        address:'',
+        web3 : new Web3(Web3.givenProvider || 'http://localhost:8545'),
+        network : '',
         account:'',
-        network:'',
+        Contract:[],
+        isMetaMask:'',
+        owner:'',
+        address:'',
         amount:'',
         name:'',
         symbol:'',
         decimals:'',
         balance:'',
         totalSupply:'',
-        coderTokenContract:''
+    }
+
+    componentDidMount() {
+        this.checkMetamask();
+        this.tokenContractHandler();
     }
 
     tokenContractHandler = async () => {
-      const web3 = new Web3(Web3.givenProvider || 'http://localhost:8545');
-      const network = await web3.eth.net.getNetworkType();
-      const accounts = await web3.eth.getAccounts();
-      this.setState({account: accounts[0],network});
-      const coderTokenContract = new web3.eth.Contract(CODER_TOKEN_ABI,CODER_TOKEN_ADDRESS);
-      this.setState({coderTokenContract});
-      const name = (await coderTokenContract.methods.name().call());
-      this.setState({name});
-      const decimals = (await coderTokenContract.methods.decimals().call());
-      this.setState({decimals});
-      const symbol = (await coderTokenContract.methods.symbol().call());
-      this.setState({symbol});
-      const totalSupply = (await coderTokenContract.methods.totalSupply().call());
-      this.setState({totalSupply});
-      const balance = (await coderTokenContract.methods.balanceOf(this.state.account).call())/10 ** parseInt(decimals);
-      this.setState({balance});
-  }
-
-    refreshPage = () => {
-      this.tokenContractHandler();  
+        await this.initWeb();
+        await this.initContract(CODER_TOKEN_ABI,CODER_TOKEN_ADDRESS);
+        await this.extraInitContract();
     }
 
-    componentDidMount = () => {
-      this.tokenContractHandler();       
+    extraInitContract = async () => {
+        let {Contract} = this.state;
+        const name = (await Contract.methods.name().call());
+        this.setState({name});
+        const decimals = (await Contract.methods.decimals().call());
+        this.setState({decimals});
+        const symbol = (await Contract.methods.symbol().call());
+        this.setState({symbol});
+        const totalSupply = (await Contract.methods.totalSupply().call());
+        this.setState({totalSupply});
+        const balance = (await Contract.methods.balanceOf(this.state.account).call())/10 ** parseInt(decimals);
+        this.setState({balance});
     }
+
     changeHandler = (e) => {
         let {address , amount} = this.state;
         let {name, value} = e.currentTarget;
@@ -52,13 +56,13 @@ class CoderToken extends Component {
     transferHandler = async() => {
       let address = this.state.address;
       let amount = this.state.amount;
-      let coderTokenContract = this.state.coderTokenContract;
+      let Contract = this.state.Contract;
       let decimals = this.state.decimals;
       for (let i = 0; i < decimals; i++){
         amount = amount+'0';
       }
 
-      await coderTokenContract.methods.transfer(address,amount).send({from: (this.state.account), gas: '1000000'},(error,result) => {
+      await Contract.methods.transfer(address,amount).send({from: (this.state.account), gas: '1000000'},(error,result) => {
         if(!error){
           console.log("it worked voteForCandidate: " +result);
         }else{
@@ -67,8 +71,33 @@ class CoderToken extends Component {
     
       });
       console.log('voteForCandidate');
-      this.refreshPage();
-  }
+    }
+
+    addTokenFunction = async () => {
+        const { ethereum } = window;
+        let {symbol, decimals} = this.state;
+        try {     
+          const wasAdded = await ethereum.request({
+            method: 'wallet_watchAsset',
+            params: {
+              type: 'ERC20', 
+              options: {
+                address: CODER_TOKEN_ADDRESS, 
+                symbol: symbol, 
+                decimals: decimals, 
+              },
+            },
+          });
+        
+          if (wasAdded) {
+            console.log('Thanks for your interest!');
+          } else {
+            console.log('HelloWorld Coin has not been added');
+          }
+        } catch (error) {
+          console.log(error);
+        }
+    }
    
 
  
@@ -77,12 +106,14 @@ class CoderToken extends Component {
         return (
             <div>
                 <div className="container">
-                    <div className="row">
-                        <div className="col-12 col-sm-8 offset-sm-2">
-                            <h1 className="text-center">{this.state.name}</h1>
-                            <hr />
-                        </div>
-                    </div>
+                    <section className="bg-light text-center">
+                        <h1>{this.state.name}</h1>
+                        <HideShow 
+                            currentAccount = {this.state.currentAccount}
+                            contractAddress = {CODER_TOKEN_ADDRESS}
+                            chainId = {this.state.chainId}
+                        />
+                    </section>
                     <div className="row">
                         <div className="col-sm-6 col-md-4 col-lg-5 offset-sm-3 offset-md-4 offset-lg-4">
                             <div className="card">
@@ -111,13 +142,23 @@ class CoderToken extends Component {
                                         style={{marginTop: "7px"}}
                                         onChange={this.changeHandler} />
                                     <button 
-                                        className="btn btn-primary" 
+                                        className="btn btn-primary m-2" 
                                         id="transferButton" 
                                         type="button" 
                                         style={{marginTop: "9px"}}
                                         onClick={this.transferHandler}
                                         >
                                         Transfer
+                                    </button>
+
+                                    <button 
+                                        className="btn btn-success m-2" 
+                                        id="transferButton" 
+                                        type="button" 
+                                        style={{marginTop: "9px"}}
+                                        onClick={this.addTokenFunction}
+                                        >
+                                        Add Token to your wallet
                                     </button>
                                 </div>
                             </div>

@@ -13,10 +13,10 @@ import Certificate from './certificate';
 import BlockchainPoll from './blockchainPoll';
 import PetShop from './petShop';
 import ModalForm from './modalForm';
-import Provider from './provider';
+import resetProvider from './resetProvider';
 
 
-class App extends Provider {
+class App extends resetProvider {
 
   state = {
     currentAccount : null,

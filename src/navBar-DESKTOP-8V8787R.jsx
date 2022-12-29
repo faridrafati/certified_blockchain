@@ -5,8 +5,8 @@ import 'bootstrap/dist/css/bootstrap.css';
 
 const NavBar = () => {
   return (
-    <div class="bg-dark">
-      <nav class="navbar navbar-dark navbar-expand-lg">
+    <div className="bg-dark">
+      <nav className="navbar navbar-dark navbar-expand-lg">
         <Link className="navbar-brand" to="/">
           Home
         </Link>

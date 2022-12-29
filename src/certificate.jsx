@@ -4,13 +4,13 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import logoPhoto from './components/images/image007.png';
 import certPhoto from './components/images/image008.png';
 import {CERTIFICATE_TOKEN_ABI,CERTIFICATE_TOKEN_ADDRESS} from './components/certificateConfig';
-import {TextField,Button} from '@mui/material';
-import Provider from './provider';
+import {TextField, Button, Stack} from '@mui/material';
+import resetProvider from './resetProvider';
 import HideShow from './HideShow';
 import "./App.css";
 import { sha256 } from 'js-sha256';
 
-class Certificate extends Provider {  
+class Certificate extends resetProvider {  
     state = {
         certified:{
             credentialID:'',
@@ -32,8 +32,10 @@ class Certificate extends Provider {
         }],
         web3:new Web3(Web3.givenProvider || 'http://localhost:8545'),
         network:'',
-        certificateContract:[],
-        isMetaMask:'', 
+        account:'',
+        Contract:[],
+        isMetaMask:'',
+        owner:'', 
         inputs:{
             credentialID:'',
             name:'',
@@ -44,44 +46,56 @@ class Certificate extends Provider {
             reasonForAward:'',    
         },
         input:'',
-        account:"",
         showCertificate:false,
         helperText: '', 
-        error: false
+        zeroAddress:'0x0000000000000000000000000000000000000000',
+        error: false,
+        today: new Date()
     }
 
+    componentDidMount() {
+        this.checkMetamask();
+        this.tokenContractHandler();
+    }
 
+    tokenContractHandler = async () => {
+        await this.initWeb();
+        await this.initContract(CERTIFICATE_TOKEN_ABI,CERTIFICATE_TOKEN_ADDRESS);
+        await this.getAllCertificates();
+    }
 
     DateTime = (timeStamp) => {
         let out = new Intl.DateTimeFormat('en-US', {year: 'numeric', month: '2-digit',day: '2-digit'}).format(timeStamp*1000);
         return out;
     }
 
-    componentDidMount() {
-        this.tokenContractHandler();
-        this.checkMetamask();
-    }
-    tokenContractHandler = async () => {
-        await this.initWeb();
-        await this.initContract();
-        await this.getAllCertificates();
-    }
-    
-    initWeb = async () => {
-        let {web3} = this.state;
-        const network = await web3.eth.net.getNetworkType();
-        const accounts = await web3.eth.getAccounts();
-        let account = accounts[0];
-        this.setState({web3,network,account});
+    dateToTimestamp = (myDate) => {
+        console.log(myDate);
+        myDate = myDate.split("-");
+        var newDate = new Date( myDate[0], myDate[1] - 1, myDate[2]);
+        console.log(myDate, newDate.getTime()/1000);
+        return(newDate.getTime()/1000);
     }
 
-    initContract = async () => {
-        let {web3} = this.state;
-        let certificateContract = new web3.eth.Contract(CERTIFICATE_TOKEN_ABI,CERTIFICATE_TOKEN_ADDRESS);
-        let owner = await certificateContract.methods.getOwner().call();
-        let isMetaMask = await web3.currentProvider.isMetaMask;
-        this.setState({isMetaMask,certificateContract,owner});
+
+
+    formatDate = (date) => {
+        var d = new Date(date),
+            month = '' + (d.getMonth() + 1),
+            day = '' + d.getDate(),
+            year = d.getFullYear();
+    
+        if (month.length < 2) 
+            month = '0' + month;
+        if (day.length < 2) 
+            day = '0' + day;
+    
+        return [year, month, day].join('-');
     }
+
+
+
+    
 
     inputHandler = (e) => {
         let {inputs,input} = this.state;
@@ -96,17 +110,17 @@ class Certificate extends Provider {
 
     checkCertificate = async (e) => {
         e.preventDefault();
-        let {certificateContract,input,showCertificate,certified} = this.state;
-        let foundCertificate = await certificateContract.methods.checkCertificate(input).call();
+        let {Contract,input,showCertificate,certified} = this.state;
+        let foundCertificate = await Contract.methods.checkCertificate(input).call();
         if(foundCertificate[0]!==''){
             showCertificate=true;
             certified.credentialID=foundCertificate[0];
             certified.name=foundCertificate[1];
             certified.courseName=foundCertificate[2];
             certified.issuingOrganization=foundCertificate[3];
-            certified.reasonForAward=foundCertificate[4];
-            certified.issueDate=foundCertificate[5];
-            certified.expirationDate=foundCertificate[6];
+            certified.issueDate=foundCertificate[4];
+            certified.expirationDate=foundCertificate[5];
+            certified.reasonForAward=foundCertificate[6];
         }else{
             showCertificate = false;
         }
@@ -115,15 +129,15 @@ class Certificate extends Provider {
 
     addCertificate = async (e) => {
         e.preventDefault();
-        let {inputs,account,certificateContract} = this.state;
+        let {inputs,account,Contract} = this.state;
 
-        await certificateContract.methods.addCertificate(
+        await Contract.methods.addCertificate(
             inputs.credentialID,
             inputs.name,
             inputs.courseName,
             inputs.issuingOrganization,
-            inputs.issueDate,
-            inputs.expirationDate,
+            this.dateToTimestamp(inputs.issueDate),
+            this.dateToTimestamp(inputs.expirationDate),
             inputs.reasonForAward
             ).send({from: (account), gas: '1000000'},(error,result) => {
             if(!error){
@@ -137,10 +151,10 @@ class Certificate extends Provider {
     }
 
     getAllCertificates = async () => {
-        let {certifiedList,certificateContract} = this.state;
-        let numberOfCertificates = await certificateContract.methods.getNumberOfCertificates().call();
+        let {certifiedList,Contract} = this.state;
+        let numberOfCertificates = await Contract.methods.getNumberOfCertificates().call();
         for(let i=0; i< numberOfCertificates; i++){
-            certifiedList[i] = await certificateContract.methods.certified(i).call();
+            certifiedList[i] = await Contract.methods.certified(i).call();
         }
         this.setState({certifiedList});
     }
@@ -150,8 +164,8 @@ class Certificate extends Provider {
     }
 
     render() {
-        let {certified,network,input,showCertificate,owner,account,inputs,certifiedList} = this.state;
-        if(owner !== account){
+        let {certified,network,input,showCertificate,owner,account,inputs,certifiedList,today} = this.state;
+        if((owner !== account) || (account ==='')){
             return (
                 <div>
                     <section className="bg-light text-center">
@@ -162,6 +176,7 @@ class Certificate extends Provider {
                             chainId = {this.state.chainId}
                         />
                     </section>
+                    <br />
                     <form>
                         <TextField id='checkCertificate' label='credential ID:' variant='outlined' style={{margin:'0px 5px'}} size='small' value={input} onChange = {this.inputHandler} />
                         <Button variant='contained' color='primary' onClick={this.checkCertificate}>Check Certificate</Button>
@@ -215,7 +230,7 @@ class Certificate extends Provider {
 
                             <p className='MsoNormal'  style={{marginBottom:'0cm',textAlign:'center'}}><span
                                 style={{fontSize:'18pt',lineHeight:'107%',fontFamily:'Lato',
-                                color:'#7F7F7F'}}><a target='_blank' rel="noreferrer" href={'https://'+network+'.etherscan.io/address/'+CERTIFICATE_TOKEN_ADDRESS+'#readContract'}>Your ID: {certified.credentialID}</a></span></p>
+                                color:'#7F7F7F'}}>Your ID: {certified.credentialID}</span></p>
 
                         </div>:<h1 className='badge bg-danger'>Certificate does not existed</h1>}
 
@@ -238,10 +253,23 @@ class Certificate extends Provider {
                         <TextField id='name' label='Name:' variant='outlined' style={{margin:'10px 15px'}} size='small' value={inputs.name} onChange = {this.inputHandler} />
                         <TextField id='courseName' label='Course Name:' variant='outlined' style={{margin:'10px 15px'}} size='small' value={inputs.courseName} onChange = {this.inputHandler} />
                         <TextField id='issuingOrganization' label='Issuing Organization:' variant='outlined' style={{margin:'10px 15px'}} size='small' value={inputs.issuingOrganization} onChange = {this.inputHandler} /><br />
+                        
                         <TextField id='reasonForAward' label='Reason For Award:' variant='outlined' sx={{width: '690px'}} style={{margin:'10px 15px'}} size='small' value={inputs.reasonForAward} onChange = {this.inputHandler} /><br />
-                        <TextField type='number' id='issueDate' label='Issue Date:' variant='outlined' style={{margin:'10px 15px'}} size='small' value={inputs.issueDate} onChange = {this.inputHandler} />
-                        <TextField type='number' id='expirationDate' label='Expiration Date:' variant='outlined' style={{margin:'10px 15px'}} size='small' value={inputs.expirationDate} onChange = {this.inputHandler} />
-                        <TextField id='credentialID' label='credential ID:' inputProps={{ readOnly: true }} variant='outlined' style={{margin:'10px 15px'}} size='small' value={inputs.credentialID} /><br />
+                        
+                        <TextField id="issueDate" label="issueDate" type="date" value={inputs.issueDate} style={{margin:'10px 15px'}} size='small' InputLabelProps={{shrink: true,}} onChange = {this.inputHandler}/>
+                        <TextField id="expirationDate" label="expirationDate" type="date"  value={inputs.expirationDate} style={{margin:'10px 15px'}} size='small' InputLabelProps={{shrink: true,}} onChange = {this.inputHandler}/>
+                        
+                        <TextField id='credentialID' label='credential ID:' inputProps={{ readOnly: true }} variant='outlined' style={{margin:'10px 15px'}} size='small' value={inputs.credentialID} /><br />                 
+
+
+
+
+
+
+
+
+
+
                         <br />
                         <Button variant='contained' color='primary' onClick={this.addCertificate}>Add Certificate</Button>
 

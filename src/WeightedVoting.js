@@ -2,42 +2,48 @@ import React, { Component } from 'react';
 import Web3 from 'web3/dist/web3.min';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import {WEIGHTED_VOTING_TOKEN_ABI,WEIGHTED_VOTING_TOKEN_ADDRESS} from './components/WeightedVotingConfig';
-
-class WeightedVoting extends Component {  
+import resetProvider from './resetProvider';
+import HideShow from './HideShow';
+class WeightedVoting extends resetProvider{
     state = {
+
+        web3:new Web3(Web3.givenProvider || 'http://localhost:8545'),
+        network:'',
+        account:'',
+        Contract:[],
+        isMetaMask:'', 
+        input:"",
         candidatesList:[
             {name:'',voteCount:''},
             {name:'',voteCount:''},
             {name:'',voteCount:''},
         ],
         accountBid:'',
-        web3:new Web3(Web3.givenProvider || 'http://localhost:8545'),
-        network:'',
-        WeightedVotingContract:[],
-        isMetaMask:'', 
-        input:"",
-        account:"",
     }
 
-    componentDidMount() {
+    componentDidMount = () => {
+        this.checkMetamask();
         this.tokenContractHandler();
     }
     tokenContractHandler = async () => {
         await this.initWeb();
-        await this.initContract();
+        await this.initContract(WEIGHTED_VOTING_TOKEN_ABI,WEIGHTED_VOTING_TOKEN_ADDRESS);
+        await this.extraInitContract();
     }
     
-    initWeb = async () => {
-        let {web3} = this.state;
-        const network = await web3.eth.net.getNetworkType();
-        const accounts = await web3.eth.getAccounts();
-        let account = accounts[0];
-        this.setState({web3,network,account});
+    extraInitContract = async () => {
+        let {Contract,owner,candidatesList} = this.state;
+        let list= await Contract.methods.getAllCandidatesWithVotes().call();
+        for (let i=0 ; i<3 ; i++){
+            candidatesList[i].name=list[2*i];
+            candidatesList[i].voteCount=list[2*i+1];
+        }
+        this.setState({candidatesList});
     }
 
     getCandidatesList = async () => {
-        let {candidatesList,WeightedVotingContract} = this.state;
-        let list= await WeightedVotingContract.methods.getAllCandidatesWithVotes().call();
+        let {candidatesList,Contract} = this.state;
+        let list= await Contract.methods.getAllCandidatesWithVotes().call();
         for (let i=0 ; i<3 ; i++){
             candidatesList[i].name=list[2*i];
             candidatesList[i].voteCount=list[2*i+1];
@@ -45,24 +51,13 @@ class WeightedVoting extends Component {
        return candidatesList;
     }
 
-    initContract = async () => {
-        let {web3,owner,candidatesList} = this.state;
-        let WeightedVotingContract = new web3.eth.Contract(WEIGHTED_VOTING_TOKEN_ABI,WEIGHTED_VOTING_TOKEN_ADDRESS);
-        let isMetaMask = await web3.currentProvider.isMetaMask;
-        let list= await WeightedVotingContract.methods.getAllCandidatesWithVotes().call();
-        for (let i=0 ; i<3 ; i++){
-            candidatesList[i].name=list[2*i];
-            candidatesList[i].voteCount=list[2*i+1];
-        }
-        owner= await WeightedVotingContract.methods.owner().call();
-        this.setState({owner,isMetaMask, candidatesList,WeightedVotingContract});
-    }
+
 
 
     authorizeVoter = async (e) => {
         e.preventDefault();
-        let {account,input,WeightedVotingContract} = this.state;
-        await WeightedVotingContract.methods.authorizeVoter(input).send({from: (account), gas: '1000000'},(error) => {
+        let {account,input,Contract} = this.state;
+        await Contract.methods.authorizeVoter(input).send({from: (account), gas: '1000000'},(error) => {
             if(error){
                 console.log("err-->"+error);
             }
@@ -70,8 +65,8 @@ class WeightedVoting extends Component {
     }
 
     voteForCandidate = async(index) => {
-        let {account,WeightedVotingContract} = this.state;
-        await WeightedVotingContract.methods.voteForCandidate(index).send({from: (account), gas: '1000000'},(error) => {
+        let {account,Contract} = this.state;
+        await Contract.methods.voteForCandidate(index).send({from: (account), gas: '1000000'},(error) => {
             if(error){
                 console.log("err-->"+error);
             }
@@ -89,15 +84,14 @@ class WeightedVoting extends Component {
         let {candidatesList,owner,network,account,input} = this.state;
         return (
             <div className='container'>
-                <div className="row">
-                    <div className="col-xs-12 col-sm-12">
-                        <h1 className="textCenter">Voting contract</h1>
-                        <h6 className="badge bg-primary">Your Network is {network}</h6>
-                        <hr />
-                        <br />
-                    </div>
-                </div>
-                <div id="accountId">Your Address is {account} {(owner === account)? 'and You are contract Owner':''} </div>
+                <section className="bg-light text-center">
+                    <h1>Weighted Voting Contract</h1>
+                    <HideShow 
+                        currentAccount = {this.state.currentAccount}
+                        contractAddress = {WEIGHTED_VOTING_TOKEN_ADDRESS}
+                        chainId = {this.state.chainId}
+                    />
+                </section>
                 <hr />
                 {(owner === account)?<div className="container">
 
