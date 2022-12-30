@@ -55,22 +55,38 @@ class WeightedVoting extends resetProvider{
 
 
     authorizeVoter = async (e) => {
+        let TxId = '';
         e.preventDefault();
         let {account,input,Contract} = this.state;
-        await Contract.methods.authorizeVoter(input).send({from: (account), gas: '1000000'},(error) => {
-            if(error){
-                console.log("err-->"+error);
-            }
-        });
+        await Contract.methods.authorizeVoter(input).send({from: (account), gas: '1000000'},(error,result) => {
+            if(!error){
+                TxId=result;
+                this.notify('info','Authorizing is in Progress');
+              }else{
+                console.log(error);
+                this.notify('error','Authorizing is Failed: '+error.message);
+              }
+          
+            });
+            await this.extraInitContract();
+            this.notify('success','Authorizing is Done: '+TxId);
     }
 
     voteForCandidate = async(index) => {
+        let TxId = '';
         let {account,Contract} = this.state;
-        await Contract.methods.voteForCandidate(index).send({from: (account), gas: '1000000'},(error) => {
-            if(error){
-                console.log("err-->"+error);
-            }
-        });
+        await Contract.methods.voteForCandidate(index).send({from: (account), gas: '1000000'},(error,result) => {
+            if(!error){
+                TxId=result;
+                this.notify('info','Voting is in Progress');
+              }else{
+                console.log(error);
+                this.notify('error','Voting is Failed: '+error.message);
+              }
+          
+            });
+        await this.extraInitContract();
+        this.notify('success','Voting is Done: '+TxId);
     }
 
     inputHandler = (e) => {

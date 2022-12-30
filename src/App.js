@@ -14,6 +14,8 @@ import BlockchainPoll from './blockchainPoll';
 import PetShop from './petShop';
 import ModalForm from './modalForm';
 import resetProvider from './resetProvider';
+import { ToastContainer, toast } from 'react-toastify';
+  import 'react-toastify/dist/ReactToastify.css';
 
 
 class App extends resetProvider {
@@ -50,6 +52,7 @@ class App extends resetProvider {
   render() {
     return (
       <div>
+        <ToastContainer />
         {(this.state.modalNeed===true?<ModalForm message={this.state.message} buttonName={this.state.buttonName} onClick={this.onClickConnect}/>:<div>{this.state.AppNavbar}</div>)}
       </div>
     );

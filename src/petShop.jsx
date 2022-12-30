@@ -35,16 +35,21 @@ class PetShop extends resetProvider {
     }
 
     Adopt = async (index) => {
+        let TxId = '';
         let {Contract,account} = this.state;
 
         
-        await Contract.methods.adopt(index).send({from: (account), gas: '1000000'},(error) => {
+        await Contract.methods.adopt(index).send({from: (account), gas: '1000000'},(error,result) => {
             if(!error){
-                console.log('pet has been adopted');
-            }else{
-              console.log("err-->"+error);
-            }  
-        });
+                TxId=result;
+                this.notify('info','Adoption is in Progress');
+              }else{
+                console.log(error);
+                this.notify('error','Adoption is Failed: '+error.message);
+              }
+          
+            });
+        this.notify('success','Adoption is Done: '+TxId);
         await this.getAllAdopters();
     }
 

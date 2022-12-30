@@ -29,7 +29,7 @@ class Task extends resetProvider {
     tokenContractHandler = async () => {
         await this.initWeb();
         await this.initContract(TODO_TOKEN_ABI,TODO_TOKEN_ADDRESS);
-        await this.getAllTasks();
+        await this.extraInitContract();
     }
     
     inputHandler = (e) => {
@@ -39,6 +39,7 @@ class Task extends resetProvider {
     }
 
     addTasks = async (e) => {
+        let TxId = '';
         let {inputs,Contract,account} = this.state;
         e.preventDefault();
         let task = {
@@ -47,27 +48,38 @@ class Task extends resetProvider {
         }
         console.log(task.taskText);
         
-        await Contract.methods.addTask(task.taskText,task.isDeleted).send({from: (account), gas: '1000000'},(error) => {
+        await Contract.methods.addTask(task.taskText,task.isDeleted).send({from: (account), gas: '1000000'},(error,result) => {
             if(!error){
-                console.log('task has been added');
-            }else{
-              console.log("err-->"+error);
-            }  
-        });
+                TxId=result;
+                this.notify('info','Adding Task is in Progress');
+              }else{
+                console.log(error);
+                this.notify('error','Adding Task Failed: '+error.message);
+              }
+          
+            });
+        await this.extraInitContract();
+        this.notify('success','Adding Task is Done: '+TxId);
     }
 
     deleteTask = async(taskId) => {
+        let TxId = '';
         let {Contract,account} = this.state;
-        await Contract.methods.deleteTask(taskId,true).send({from: (account), gas: '1000000'},(error) => {
+        await Contract.methods.deleteTask(taskId,true).send({from: (account), gas: '1000000'},(error,result) => {
             if(!error){
-                console.log('task has been deleted');
-            }else{
-              console.log("err-->"+error);
-            }  
-        });
+                TxId=result;
+                this.notify('info','Deleting Task is in Progress');
+              }else{
+                console.log(error);
+                this.notify('error','Deleting Task is Failed: '+error.message);
+              }
+          
+            });
+        await this.extraInitContract();
+        this.notify('success','Deleting Task is Done: '+TxId);
     }
 
-    getAllTasks =async() => {
+    extraInitContract =async() => {
         let {Contract,account} = this.state;
         let tasks = await Contract.methods.getMyTasks().call({from: account});
         this.setState({tasks});

@@ -26,6 +26,7 @@ class CoderToken extends resetProvider {
         this.tokenContractHandler();
     }
 
+
     tokenContractHandler = async () => {
         await this.initWeb();
         await this.initContract(CODER_TOKEN_ABI,CODER_TOKEN_ADDRESS);
@@ -58,45 +59,46 @@ class CoderToken extends resetProvider {
       let amount = this.state.amount;
       let Contract = this.state.Contract;
       let decimals = this.state.decimals;
+      let TxId = '';
       for (let i = 0; i < decimals; i++){
         amount = amount+'0';
       }
 
       await Contract.methods.transfer(address,amount).send({from: (this.state.account), gas: '1000000'},(error,result) => {
         if(!error){
-          console.log("it worked voteForCandidate: " +result);
+          TxId = result;
+          this.notify('info','Pending Transactions on Ethereum');
         }else{
-          console.log("err-->"+error);
+          this.notify('error',error.message);
         }
     
       });
-      console.log('voteForCandidate');
+      const balance = await(Contract.methods.balanceOf(this.state.account).call())/10 ** parseInt(decimals);
+      this.setState({balance});
+      this.notify('success','TX is Done: '+TxId);
     }
 
     addTokenFunction = async () => {
-        const { ethereum } = window;
-        let {symbol, decimals} = this.state;
-        try {     
-          const wasAdded = await ethereum.request({
-            method: 'wallet_watchAsset',
-            params: {
-              type: 'ERC20', 
-              options: {
-                address: CODER_TOKEN_ADDRESS, 
-                symbol: symbol, 
-                decimals: decimals, 
-              },
+      const { ethereum } = window;
+      let {symbol, decimals} = this.state;
+        await ethereum.request({
+          method: 'wallet_watchAsset',
+          params: {
+            type: 'ERC20', 
+            options: {
+              address: CODER_TOKEN_ADDRESS, 
+              symbol: symbol, 
+              decimals: decimals, 
             },
-          });
-        
-          if (wasAdded) {
-            console.log('Thanks for your interest!');
-          } else {
-            console.log('HelloWorld Coin has not been added');
-          }
-        } catch (error) {
-          console.log(error);
+          },
         }
+      ).then((result)=>{
+        this.notify('success',`${this.state.name} Token is Added to Your Wallet`);
+        }
+      ).catch ((error) =>{
+        this.notify('error','User Rejected to Add Token');
+        }
+      );
     }
    
 

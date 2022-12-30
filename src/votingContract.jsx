@@ -4,8 +4,7 @@ import {VOTING_CONTRACT_ABI,VOTING_CONTRACT_ADDRESS} from './components/Voting_C
 import resetProvider from './resetProvider';
 import HideShow from './HideShow';
 import Select from './components/pollCommon/select';
-import { ToastContainer, toast } from 'react-toastify';
-  import 'react-toastify/dist/ReactToastify.css';
+
 
 class VotingContract extends resetProvider {
     state = {
@@ -19,7 +18,6 @@ class VotingContract extends resetProvider {
             address:'',
             votes:''
         }],
-
         data:''
     };
 
@@ -59,34 +57,40 @@ class VotingContract extends resetProvider {
 
 
     voteForCandidate = async() => {
+        let TxId ='';
         let address = this.state.data['voteFor'];
         let {Contract} = this.state;
-        this.notify();
         await Contract.methods.voteForCandidate(address).send({from: (this.state.account), gas: '1000000'},(error,result) => {
           if(!error){
-            console.log("it worked: " +result);
+            TxId=result;
+            this.notify('info','Voting is in Progress');
           }else{
-            console.log("err-->"+error);
-            
+            console.log(error);
+            this.notify('error','Voting Failed: '+error.message);
           }
       
         });
-        console.log('voteForCandidate');
+        await this.extraInitContract();
+        this.notify('success','Voting is Done: '+TxId);
     }    
 
     addCandidate = async() => {
+        let TxId='';
         let address = this.state.data['addCandidate'];
         let {Contract} = this.state;
         await Contract.methods.addCandidate(address).send({from: (this.state.account), gas: '1000000'},(error,result) => {
-          if(!error){
-            console.log("it worked: " +result);
-          }else{
-            console.log("err-->"+error);
-          }
-      
-        });
-        console.log('voteForCandidate');
-      }
+            if(!error){
+                TxId=result;
+                this.notify('info','Adding Candidate is in Progress');
+              }else{
+                console.log(error);
+                this.notify('error','Adding Candidate is Failed: '+error.message);
+              }
+          
+            });
+        await this.extraInitContract();
+        this.notify('success','Adding Candidate is Done: '+TxId);
+    }
 
     handleChange = ({ currentTarget: input }) => {
         const data = { ...this.state.data };
@@ -96,17 +100,10 @@ class VotingContract extends resetProvider {
         }
     };
 
-    notify = () => {
-        
-        toast("Wow so easy!")
-    };
-
-
     render() {
         let {data} = this.state;
         return (
             <div className="container">
-                <ToastContainer />
                 <section className="bg-light text-center">
                     <h1>Voting Application</h1>
                     <HideShow 

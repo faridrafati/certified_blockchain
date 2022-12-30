@@ -1,5 +1,7 @@
 import { Component } from 'react';
 import detectEthereumProvider from '@metamask/detect-provider';
+import { ToastContainer, toast } from 'react-toastify';
+  import 'react-toastify/dist/ReactToastify.css';
 
 class resetProvider extends Component {
 
@@ -130,6 +132,56 @@ class resetProvider extends Component {
     let isMetaMask = await web3.currentProvider.isMetaMask;
     this.setState({isMetaMask,Contract,owner});
   }
+
+  notify = (type,message) => {
+    let milSeconds = 4000;
+    switch(type) {
+        case 'info': 
+            return toast.info(message, {
+                position: "bottom-right",
+                autoClose: milSeconds,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "colored",
+                });
+        case 'success':
+            return toast.success(message, {
+                position: "bottom-right",
+                autoClose: milSeconds,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "colored",
+                });
+        case 'warning':
+            return toast.warning(message, {
+                position: "bottom-right",
+                autoClose: milSeconds,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "colored",
+                });
+        case 'error':
+            return toast.error(message, {
+                position: "bottom-right",
+                autoClose: milSeconds,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "colored",
+                });
+    }
+}
 
 
 

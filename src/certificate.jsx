@@ -128,6 +128,7 @@ class Certificate extends resetProvider {
     }
 
     addCertificate = async (e) => {
+        let TxId = '';
         e.preventDefault();
         let {inputs,account,Contract} = this.state;
 
@@ -140,14 +141,18 @@ class Certificate extends resetProvider {
             this.dateToTimestamp(inputs.expirationDate),
             inputs.reasonForAward
             ).send({from: (account), gas: '1000000'},(error,result) => {
-            if(!error){
-              console.log("it worked voteForCandidate: " +result);
-            }else{
-              console.log("err-->"+error);
-            }
-        
-        });
-        this.getAllCertificates();
+                if(!error){
+                    TxId=result;
+                    this.notify('info','Adding Certificate is in Progress');
+                  }else{
+                    console.log(error);
+                    this.notify('error','Adding Certificate is Failed: '+error.message);
+                  }
+              
+                });
+
+            this.notify('success','Adding Certificate is Done: '+TxId);
+        await this.getAllCertificates();
     }
 
     getAllCertificates = async () => {
