@@ -68,8 +68,8 @@ class WeightedVoting extends resetProvider{
               }
           
             });
-            await this.extraInitContract();
-            this.notify('success','Authorizing is Done: '+TxId);
+        await this.extraInitContract();
+        this.notify('success','Authorizing is Done: '+TxId);
     }
 
     voteForCandidate = async(index) => {
@@ -106,6 +106,7 @@ class WeightedVoting extends resetProvider{
                         currentAccount = {this.state.currentAccount}
                         contractAddress = {WEIGHTED_VOTING_TOKEN_ADDRESS}
                         chainId = {this.state.chainId}
+                        owner = {owner}
                     />
                 </section>
                 <hr />

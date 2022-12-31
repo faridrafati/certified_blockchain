@@ -251,6 +251,7 @@ class Certificate extends resetProvider {
                             currentAccount = {this.state.currentAccount}
                             contractAddress = {CERTIFICATE_TOKEN_ADDRESS}
                             chainId = {this.state.chainId}
+                            owner={owner}
                         />
                     </section>
                     <br />

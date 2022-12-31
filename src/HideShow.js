@@ -18,6 +18,9 @@ class HideShow extends Component {
   }
   
   render() {
+    let {owner,currentAccount,contractAddress} = this.props;
+    owner = (owner !=undefined)?owner.toLowerCase():undefined;
+    currentAccount = (currentAccount !=undefined)?currentAccount.toLowerCase():undefined;
     const chains = this.state.chain;
     let webAddress = '';
     let chain = {};
@@ -40,12 +43,12 @@ class HideShow extends Component {
           Your Chain is: {chain.chainName} With Id: {chain.chainId}
           </p>
           <p>
-          <a className="link-dark" href={'https://'+webAddress+'etherscan.io/address/'+this.props.currentAccount}  target='_blank' rel="noreferrer" type="addressLinks">
-          Your Address is: {this.props.currentAccount} </a>
+          <a className="link-dark" href={'https://'+webAddress+'etherscan.io/address/'+currentAccount}  target='_blank' rel="noreferrer" type="addressLinks">
+          Your Address is{(owner === currentAccount)?' (Contract Owner): ':': '} {currentAccount}</a>
           </p>
           <p>
-          <a className="link-dark"href={'https://'+webAddress+'etherscan.io/address/'+this.props.contractAddress+'#readContract'}  target='_blank' rel="noreferrer" type="addressLinks">
-          Your Contract Address is: {this.props.contractAddress}</a>
+          <a className="link-dark"href={'https://'+webAddress+'etherscan.io/address/'+contractAddress+'#readContract'}  target='_blank' rel="noreferrer" type="addressLinks">
+          Your Contract Address is: {contractAddress}</a>
           </p>
         </div>
       </Collapse>

@@ -96,10 +96,11 @@ class CoderToken extends resetProvider {
         this.notify('success',`${this.state.name} Token is Added to Your Wallet`);
         }
       ).catch ((error) =>{
-        this.notify('error','User Rejected to Add Token');
+        this.notify('error',error.message);
         }
       );
     }
+    
    
 
  

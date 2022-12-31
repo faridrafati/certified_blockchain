@@ -69,70 +69,101 @@ class Auction extends resetProvider {
 
     putBid = async () => {
         let {account,input,Contract,web3,Highest,accountBid} = this.state;
-        await Contract.methods.putBid().send({from: (account), gas: '1000000', value: web3.utils.toWei(input, "finney")},(error) => {
-            if(error){
-              console.log("err-->"+error);
-            } 
-        });
-        Highest.bid= await Contract.methods.HighestBid().call();
-        Highest.bidder= await Contract.methods.HighestBidder().call();
-        accountBid.bid= await Contract.methods.getBidderBid(account).call();
-        this.setState(Highest,accountBid);
+        let TxId='';
+        await Contract.methods.putBid().send({from: (account), gas: '1000000', value: web3.utils.toWei(input, "finney")},(error,result) => {
+            if(!error){
+                TxId=result;
+                this.notify('info','Putting Bid is in Progress');
+              }else{
+                console.log(error);
+                this.notify('error','Putting Bid is Failed: '+error.message);
+              }
+          
+            });
+        this.notify('success','Putting Bid is Done: '+TxId);
+        await this.extraInitContract();
+
     }
 
     putEndTime = async () => {
         let {account,input,Contract,Highest,endTime} = this.state;
-        await Contract.methods.putEndTime(parseInt(input)).send({from: (account), gas: '1000000'},(error) => {
-            if(error){
-              console.log("err-->"+error);
-            }else{
-                endTime = input;
-            } 
-        });
-        Highest.bid= await Contract.methods.HighestBid().call();
-        Highest.bidder= await Contract.methods.HighestBidder().call();
-        this.setState({endTime,Highest});
+        let TxId='';
+
+        console.log('putEndTime ',input,this.dateToTimestamp(input));
+        
+        await Contract.methods.putEndTime(parseInt(this.dateToTimestamp(input))).send({from: (account), gas: '1000000'},(error,result) => {
+            if(!error){
+                TxId=result;
+                this.notify('info','Putting End Time is in Progress');
+              }else{
+                console.log(error);
+                this.notify('error','Putting End Time is Failed: '+error.message);
+              }
+          
+            });
+        this.notify('success','Putting End Time is Done: '+TxId);
+        await this.extraInitContract();
     }
 
     endAuction = async (e) => {
         e.preventDefault();
+        let TxId='';
         let {account,Contract,Highest,auctionEnded} = this.state;
-        await Contract.methods.endAuction(true).send({from: (account), gas: '1000000'},(error) => {
-            if(error){
-              console.log("err-->"+error);
-            }else{
-                auctionEnded = true;
-            }
-        });
-        Highest.bid= await Contract.methods.HighestBid().call();
-        Highest.bidder= await Contract.methods.HighestBidder().call();
-        this.setState({Highest,auctionEnded});
+        await Contract.methods.endAuction(true).send({from: (account), gas: '1000000'},(error,result) => {
+            if(!error){
+                TxId=result;
+                this.notify('info','Ending Auction is in Progress');
+              }else{
+                console.log(error);
+                this.notify('error','Ending Auction is Failed: '+error.message);
+              }
+          
+            });
+        this.notify('success','Ending Auction is Done: '+TxId);
+        await this.extraInitContract();
     }
 
     startAuction = async (e) => {
         e.preventDefault();
+        let TxId='';
         let {account,Contract,Highest,auctionEnded} = this.state;
-        await Contract.methods.endAuction(false).send({from: (account), gas: '1000000'},(error) => {
-            if(error){
-              console.log("err-->"+error);
-            }else{
-                auctionEnded = false;
-            }
-        });
-        Highest.bid= await Contract.methods.HighestBid().call();
-        Highest.bidder= await Contract.methods.HighestBidder().call();
-        this.setState({Highest,auctionEnded});
+        await Contract.methods.endAuction(false).send({from: (account), gas: '1000000'},(error,result) => {
+            if(!error){
+                TxId=result;
+                this.notify('info','Starting Auction is in Progress');
+              }else{
+                console.log(error);
+                this.notify('error','Starting Auction is Failed: '+error.message);
+              }
+          
+            });
+        this.notify('success','Starting Auction is Done: '+TxId);
+        await this.extraInitContract();
     }
 
     withdrawBid = async() => {
         let {account,withdraw,Contract} = this.state;
+        let TxId='';
 
-        await Contract.methods.withdrawBid(withdraw).send({from: (account), gas: '1000000'},(error) => {
-            if(error){
-                console.log("err-->"+error);
-            } 
-        });
-    }   
+        await Contract.methods.withdrawBid(withdraw).send({from: (account), gas: '1000000'},(error,result) => {
+            if(!error){
+                TxId=result;
+                this.notify('info','Withdrawing is in Progress');
+              }else{
+                console.log(error);
+                this.notify('error','Withdrawing is Failed: '+error.message);
+              }
+          
+            });
+        this.notify('success','Withdrawing Auction is Done: '+TxId);
+        await this.extraInitContract();
+    } 
+    
+    dateToTimestamp = (myDate) => {
+        myDate = myDate.split("-");
+        var newDate = new Date( myDate[0], myDate[1] - 1, myDate[2]);
+        return(newDate.getTime()/1000);
+    }
 
 
     render() {
@@ -181,6 +212,7 @@ class Auction extends resetProvider {
                             currentAccount = {this.state.currentAccount}
                             contractAddress = {AUCTION_TOKEN_ADDRESS}
                             chainId = {this.state.chainId}
+                            owner = {owner}
                         />
                     </section>
                     <div className="row align-items-center justify-content-center">
@@ -190,7 +222,8 @@ class Auction extends resetProvider {
                         <form className='col-8 align-items-center justify-content-center  text-center'>
                             <p className={(parseInt(now) > parseInt(endTime)) ? 'badge bg-danger' : 'badge bg-primary'}>Auction {(parseInt(now) > parseInt(endTime))?  'is Ended at ( ' +endTime+' timeStamp) '+ this.DateTime(endTime) : 'is in Process till ( ' +endTime+' timeStamp) '+ this.DateTime(endTime) }</p>
                             <br /><br />
-                            <TextField id='outlined-basic1' label='Put End Time to Auction in timeStamp' variant='outlined' style={{margin:'0px 5px'}} size='small' value={input} onChange = {this.inputHandler} />
+                            <TextField id="outlined-basic1" label="Put End Time to Auction in timeStamp" variant='outlined' style={{margin:'0px 5px'}} size='small' value={input} onChange = {this.inputHandler} type="datetime-local" InputLabelProps={{shrink: true,}} />
+
                             <Button variant='contained' color='primary' onClick={() => this.putEndTime()}>Submit End Time to Auction</Button>
                             <br /><br />
                             <TextField id='outlined-basic2' label='Put withdraw Address' variant='outlined' style={{margin:'0px 5px'}} size='small' value={withdraw} onChange = {this.withdrawHandler} />
