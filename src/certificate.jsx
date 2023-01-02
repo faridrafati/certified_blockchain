@@ -4,7 +4,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import logoPhoto from './components/images/image007.png';
 import certPhoto from './components/images/image008.png';
 import {CERTIFICATE_TOKEN_ABI,CERTIFICATE_TOKEN_ADDRESS} from './components/certificateConfig';
-import {TextField, Button, Stack} from '@mui/material';
+import {TextField, Button} from '@mui/material';
 import resetProvider from './resetProvider';
 import HideShow from './HideShow';
 import "./App.css";
@@ -95,6 +95,7 @@ class Certificate extends resetProvider {
 
 
 
+    
     
 
     inputHandler = (e) => {

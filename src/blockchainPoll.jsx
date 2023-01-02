@@ -5,14 +5,15 @@ import CardList from './list';
 import Details from './details';
 import Chart from 'react-apexcharts';
 import {POLL_CONTRACT_ABI,POLL_CONTRACT_ADDRESS} from './components/pollConfig';
-  
-class BlockchainPoll extends Component {
+import resetProvider from './resetProvider';
+import HideShow from './HideShow';
+class BlockchainPoll extends resetProvider {
   
     state = {
         web3:new Web3(Web3.givenProvider || 'http://localhost:8545'),
         network:'',
         account:'',
-        pollContract:[],
+        Contract:[],
         isMetaMask:'',
 
         Voter: {
@@ -62,35 +63,21 @@ class BlockchainPoll extends Component {
     }
 
     componentDidMount() {
+        this.checkMetamask();
         this.tokenContractHandler();
     }
     tokenContractHandler = async () => {
         await this.initWeb();
-        await this.initContract();
+        await this.initContract(POLL_CONTRACT_ABI,POLL_CONTRACT_ADDRESS);
         await this.getAllPolls();
-    }
-    
-    initWeb = async () => {
-        let {web3} = this.state;
-        const network = await web3.eth.net.getNetworkType();
-        const accounts = await web3.eth.getAccounts();
-        let account = accounts[0];
-        this.setState({web3,network,account});
-    }
-
-    initContract = async () => {
-        let {web3} = this.state;
-        let pollContract = new web3.eth.Contract(POLL_CONTRACT_ABI,POLL_CONTRACT_ADDRESS);
-        let isMetaMask = await web3.currentProvider.isMetaMask;
-        this.setState({isMetaMask,pollContract});
     }
 
     getAllPolls = async () => {
-        let {pollContract,account} = this.state;
+        let {Contract,account} = this.state;
         let Polls = this.state.Polls;
-        let numberOfPolls = await pollContract.methods.getTotalPolls().call();
+        let numberOfPolls = await Contract.methods.getTotalPolls().call();
         for(let i=0; i< numberOfPolls; i++){
-            let _poll = await pollContract.methods.getPoll(i).call();
+            let _poll = await Contract.methods.getPoll(i).call();
             Polls[i] =   {            
                 id:_poll[0],
                 question: _poll[1],
@@ -100,7 +87,7 @@ class BlockchainPoll extends Component {
                 voted: false
             }
         }
-        let votedList = await pollContract.methods.getVoter(account).call();
+        let votedList = await Contract.methods.getVoter(account).call();
         let result = votedList[1].map(i=>Number(i));
         let length = result.length;
         for (let i=0; i< length; i++) {
@@ -111,15 +98,19 @@ class BlockchainPoll extends Component {
 
 
     submitCreatePollHandler = async (createdPoll) => {
-        let {pollContract,account} = this.state;
-        await pollContract.methods.createPoll(createdPoll.question,createdPoll.image,[createdPoll.option1,createdPoll.option2,createdPoll.option3]).send({from: (account), gas: '1000000'},(error) => {
+        let TxId='';
+        let {Contract,account} = this.state;
+        await Contract.methods.createPoll(createdPoll.question,createdPoll.image,[createdPoll.option1,createdPoll.option2,createdPoll.option3]).send({from: (account), gas: '1000000'},(error,result) => {
             if(!error){
-                console.log('poll has been added');
-            }else{
-              console.log("err-->"+error);
-            }
-            this.setState({pollOrNot:false});
-        });
+                TxId=result;
+                this.notify('info','Creating Poll is in Progress');
+              }else{
+                console.log(error);
+                this.notify('error','Creating Poll is Failed: '+error.message);
+              }
+              this.setState({pollOrNot:false});
+            });
+        this.notify('success','Creating Poll is Done: '+TxId);
         await this.getAllPolls();
     }
 
@@ -160,17 +151,23 @@ class BlockchainPoll extends Component {
     }
 
     submitVote =  async (e,selectedItem) => {
+        let TxId='';
         e.preventDefault();
         let selectedPoll = this.state.selectedPoll;
         let selectedIndex = selectedPoll.items.indexOf(selectedItem);
-        await this.state.pollContract.methods.vote(selectedPoll.id,selectedIndex).send({from: (this.state.account), gas: '1000000'},(error) => {
+        await this.state.Contract.methods.vote(selectedPoll.id,selectedIndex).send({from: (this.state.account), gas: '1000000'},(error,result) => {
             if(!error){
-                console.log('vote is done');
+                TxId=result;
+                this.notify('info','Submitting Vote is in Progress');
                 selectedPoll.voted = true;
             }else{
-              console.log("err-->"+error);
-            }  
+                console.log(error);
+                this.notify('error','Submitting Vote is Failed: '+error.message);
+            }
         });
+
+        this.notify('success','Submitting Vote is Done: '+TxId); 
+
         selectedPoll.votes = selectedPoll.votes.map(i=>Number(i));
         selectedPoll.votes[selectedIndex] ++;
 
@@ -186,15 +183,15 @@ class BlockchainPoll extends Component {
         let {Polls,options,series} = this.state;
         return (
             <div>
-                <nav className="navbar navbar-light bg-light">
-                    <a className='navbar-brand mr-auto' href='https://www.certifiedBlockchain.ir'>Blockchain Polls</a>
-                    <button className='btn btn-secondary' onClick={() => this.setState({pollOrNot: !(this.state.pollOrNot)})}>Create Poll</button>
-                </nav>
-                
                 <section className="bg-light text-center">
-                    <h1>Polls Rethink</h1>
-                    <p className='lead text-muted'>Your Address is {this.state.account}</p>
+                    <h1>Auction App</h1>
+                    <HideShow 
+                        currentAccount = {this.state.currentAccount}
+                        contractAddress = {POLL_CONTRACT_ADDRESS}
+                        chainId = {this.state.chainId}
+                    />
                 </section>
+                <button className='btn btn-success m-2 mt-4 mb-4 container' onClick={() => this.setState({pollOrNot: !(this.state.pollOrNot)})}>{!this.state.pollOrNot?'Create a Poll':'Start Polling'}</button>
                 {this.state.pollOrNot &&                 
                     <div className='col-sm-4 container'>
                         <PollForm submitCreatePollHandler = {this.submitCreatePollHandler}/>

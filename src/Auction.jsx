@@ -160,9 +160,7 @@ class Auction extends resetProvider {
     } 
     
     dateToTimestamp = (myDate) => {
-        myDate = myDate.split("-");
-        var newDate = new Date( myDate[0], myDate[1] - 1, myDate[2]);
-        return(newDate.getTime()/1000);
+        return(new Date(myDate).valueOf()/1000);
     }
 
 
@@ -187,10 +185,10 @@ class Auction extends resetProvider {
                         />
                     </section>
                     <div className="row align-items-center justify-content-center">
-                        <div className='col-6'>
+                        <div className='col-4'>
                             {(auctionEnded || (parseInt(now) > parseInt(endTime)))? <img src={sold} alt=""/> : <img src={car} alt=""/>  }
                         </div>
-                        <form className='col-8  align-items-center justify-content-center  text-center'>
+                        <form className='col-12  align-items-center justify-content-center  text-center'>
                             <p className={(parseInt(now) > parseInt(endTime)) ? 'badge bg-danger' : 'badge bg-primary'}>Auction {(parseInt(now) > parseInt(endTime))?  'is Ended at ( ' +endTime+' timeStamp) '+ this.DateTime(endTime) : 'is in Process till ( ' +endTime+' timeStamp) '+ this.DateTime(endTime) }</p>
                             <br /><br />
                             {(auctionEnded || (parseInt(now) > parseInt(endTime)))? '': <TextField id='outlined-basic' label='Bid in finney (1 ether = 1000 finney)' variant='outlined' style={{margin:'0px 5px'}} size='small' value={input} onChange = {this.inputHandler} />}
@@ -216,10 +214,10 @@ class Auction extends resetProvider {
                         />
                     </section>
                     <div className="row align-items-center justify-content-center">
-                        <div className='col-6'>
+                        <div className='col-4'>
                             {(auctionEnded || (parseInt(now) > parseInt(endTime)))? <img src={sold} alt=""/> : <img src={car} alt=""/>  }
                         </div>
-                        <form className='col-8 align-items-center justify-content-center  text-center'>
+                        <form className='col-12 align-items-center justify-content-center  text-center'>
                             <p className={(parseInt(now) > parseInt(endTime)) ? 'badge bg-danger' : 'badge bg-primary'}>Auction {(parseInt(now) > parseInt(endTime))?  'is Ended at ( ' +endTime+' timeStamp) '+ this.DateTime(endTime) : 'is in Process till ( ' +endTime+' timeStamp) '+ this.DateTime(endTime) }</p>
                             <br /><br />
                             <TextField id="outlined-basic1" label="Put End Time to Auction in timeStamp" variant='outlined' style={{margin:'0px 5px'}} size='small' value={input} onChange = {this.inputHandler} type="datetime-local" InputLabelProps={{shrink: true,}} />
