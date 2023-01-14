@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React from 'react';
 import car from './components/images/car.png';
 import sold from './components/images/sold.png';
 import Web3 from 'web3/dist/web3.min';
@@ -41,7 +41,7 @@ class Auction extends resetProvider {
     }
     
     extraInitContract = async () => {
-        let {Contract,Highest,accountBid,account,owner,endTime,auctionEnded} = this.state;
+        let {Contract,Highest,accountBid,account,endTime,auctionEnded} = this.state;
         Highest.bid= await Contract.methods.HighestBid().call();
         Highest.bidder= await Contract.methods.HighestBidder().call();
         accountBid= await Contract.methods.getBidderBid(account).call();
@@ -68,7 +68,7 @@ class Auction extends resetProvider {
     }
 
     putBid = async () => {
-        let {account,input,Contract,web3,Highest,accountBid} = this.state;
+        let {account,input,Contract,web3} = this.state;
         let TxId='';
         await Contract.methods.putBid().send({from: (account), gas: '1000000', value: web3.utils.toWei(input, "finney")},(error,result) => {
             if(!error){
@@ -86,7 +86,7 @@ class Auction extends resetProvider {
     }
 
     putEndTime = async () => {
-        let {account,input,Contract,Highest,endTime} = this.state;
+        let {account,input,Contract} = this.state;
         let TxId='';
 
         console.log('putEndTime ',input,this.dateToTimestamp(input));
@@ -108,7 +108,7 @@ class Auction extends resetProvider {
     endAuction = async (e) => {
         e.preventDefault();
         let TxId='';
-        let {account,Contract,Highest,auctionEnded} = this.state;
+        let {account,Contract} = this.state;
         await Contract.methods.endAuction(true).send({from: (account), gas: '1000000'},(error,result) => {
             if(!error){
                 TxId=result;
@@ -126,7 +126,7 @@ class Auction extends resetProvider {
     startAuction = async (e) => {
         e.preventDefault();
         let TxId='';
-        let {account,Contract,Highest,auctionEnded} = this.state;
+        let {account,Contract} = this.state;
         await Contract.methods.endAuction(false).send({from: (account), gas: '1000000'},(error,result) => {
             if(!error){
                 TxId=result;
@@ -165,7 +165,7 @@ class Auction extends resetProvider {
 
 
     render() {
-        let {input,web3,Highest,account,accountBid,owner,network,endTime,auctionEnded,withdraw} = this.state;
+        let {input,web3,Highest,account,accountBid,owner,endTime,auctionEnded,withdraw} = this.state;
         let now = parseInt(Date.now()/1000);
         let isBidder = Highest.bidder === account ? true : false;
         let isOwner = owner === account ? true : false;

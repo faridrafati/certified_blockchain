@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React from 'react';
 import Web3 from 'web3/dist/web3.min';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import logoPhoto from './components/images/image007.png';
@@ -170,7 +170,7 @@ class Certificate extends resetProvider {
     }
 
     render() {
-        let {certified,network,input,showCertificate,owner,account,inputs,certifiedList,today} = this.state;
+        let {certified,input,showCertificate,owner,account,inputs,certifiedList} = this.state;
         if((owner !== account) || (account ==='')){
             return (
                 <div>

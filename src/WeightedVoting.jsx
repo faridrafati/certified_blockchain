@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React from 'react';
 import Web3 from 'web3/dist/web3.min';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import {WEIGHTED_VOTING_TOKEN_ABI,WEIGHTED_VOTING_TOKEN_ADDRESS} from './components/WeightedVotingConfig';
@@ -32,7 +32,7 @@ class WeightedVoting extends resetProvider{
     }
     
     extraInitContract = async () => {
-        let {Contract,owner,candidatesList} = this.state;
+        let {Contract,candidatesList} = this.state;
         let list= await Contract.methods.getAllCandidatesWithVotes().call();
         for (let i=0 ; i<3 ; i++){
             candidatesList[i].name=list[2*i];
@@ -97,7 +97,7 @@ class WeightedVoting extends resetProvider{
 
 
     render() { 
-        let {candidatesList,owner,network,account,input} = this.state;
+        let {candidatesList,owner,account,input} = this.state;
         return (
             <div className='container'>
                 <section className="bg-light text-center">

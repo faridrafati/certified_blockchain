@@ -180,6 +180,17 @@ class resetProvider extends Component {
                 progress: undefined,
                 theme: "colored",
                 });
+        default :
+            return toast(message, {
+              position: "bottom-right",
+              autoClose: milSeconds,
+              hideProgressBar: false,
+              closeOnClick: true,
+              pauseOnHover: true,
+              draggable: true,
+              progress: undefined,
+              theme: "colored",
+              });
     }
 }
 

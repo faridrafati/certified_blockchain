@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React from 'react';
 import Web3 from 'web3/dist/web3.min';
 import {CODER_TOKEN_ABI,CODER_TOKEN_ADDRESS} from './components/Token_config';
 import HideShow from './HideShow';
@@ -118,7 +118,7 @@ class CoderToken extends resetProvider {
                         />
                     </section>
                     <div className="row">
-                        <div className="col-sm-6 col-md-4 col-lg-5 offset-sm-3 offset-md-4 offset-lg-4">
+                        <div className="col-6 col-md-8 offset-md-2">
                             <div className="card">
                                 <div className="card-header">
                                     <h3 className="mb-0">My Wallet</h3>

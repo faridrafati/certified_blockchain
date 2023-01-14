@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React from 'react';
 import Web3 from 'web3/dist/web3.min';
 import {VOTING_CONTRACT_ABI,VOTING_CONTRACT_ADDRESS} from './components/Voting_Config';
 import resetProvider from './resetProvider';

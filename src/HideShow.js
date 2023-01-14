@@ -19,8 +19,8 @@ class HideShow extends Component {
   
   render() {
     let {owner,currentAccount,contractAddress} = this.props;
-    owner = (owner !=undefined)?owner.toLowerCase():undefined;
-    currentAccount = (currentAccount !=undefined)?currentAccount.toLowerCase():undefined;
+    owner = (owner !==undefined)?owner.toLowerCase():undefined;
+    currentAccount = (currentAccount !==undefined)?currentAccount.toLowerCase():undefined;
     const chains = this.state.chain;
     let webAddress = '';
     let chain = {};
@@ -35,7 +35,7 @@ class HideShow extends Component {
     
     return (
       <div>
-      <a className="link-secondary lead text-muted"  onClick={this.invokeCollapse} style={{cursor:'pointer'}}>+ Contract Info...</a>
+      <u className="link-secondary lead text-muted" onClick={this.invokeCollapse} style={{cursor:'pointer'}}>+ Contract Info...</u>
 
       <Collapse in={this.state.isVisible}>
         <div id="collapsePanel">

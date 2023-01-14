@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React from 'react';
 import Web3 from 'web3/dist/web3.min';
 import {TextField,Button} from '@mui/material';
 import {TODO_TOKEN_ABI,TODO_TOKEN_ADDRESS} from './components/TodoConfig';

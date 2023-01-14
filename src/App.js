@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React from 'react';
 import { Route, Redirect, Switch } from "react-router-dom";
 import CoderToken from './coderToken';
 import './App.css';
@@ -14,8 +14,9 @@ import BlockchainPoll from './blockchainPoll';
 import PetShop from './petShop';
 import ModalForm from './modalForm';
 import resetProvider from './resetProvider';
-import { ToastContainer, toast } from 'react-toastify';
+import { ToastContainer } from 'react-toastify';
   import 'react-toastify/dist/ReactToastify.css';
+import GuessingGame from './GuessingGame';
 
 
 class App extends resetProvider {
@@ -41,6 +42,7 @@ class App extends resetProvider {
         <Route path="/certificate" component={Certificate} />
         <Route path="/pollSurvey" component={BlockchainPoll} />
         <Route path="/petAdoption" component={PetShop} />
+        <Route path="/guessing" component={GuessingGame} />
         <Route path="/not-found" component={NotFound} />
         <Redirect from="/" exact to="/token" />
         <Redirect to="/not-found" />

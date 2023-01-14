@@ -1,13 +1,14 @@
 import React, { Component} from 'react';
 import Web3 from 'web3/dist/web3.min';
 import {CHAT_TOKEN_ABI,CHAT_TOKEN_ADDRESS} from './components/ChatConfig';
-import './CertApp.css'
-class CertChat extends Component {
+import resetProvider from './resetProvider';
+import HideShow from './HideShow';
+class CertChat extends resetProvider {
     state = {
         web3:new Web3(Web3.givenProvider || 'http://localhost:8545'),
         network:'',
         account:'',
-        chatContract:'',
+        Contract:'',
         isMetaMask:'',
         owner:'',
         registeredUsersAddress:[],
@@ -18,40 +19,17 @@ class CertChat extends Component {
         display: 'none',
     }
 
-
-    initWeb = async () => {
-        let {web3} = this.state;
-        const network = await web3.eth.net.getNetworkType();
-        const accounts = await web3.eth.getAccounts();
-        let account = accounts[0];
-        this.setState({web3,network,account});
-    }
-
-    initContract = async () => {
-        let {web3} = this.state;
-        let chatContract = new web3.eth.Contract(CHAT_TOKEN_ABI,CHAT_TOKEN_ADDRESS);
-        let isMetaMask = await web3.currentProvider.isMetaMask;
-        this.setState({chatContract,isMetaMask});
-    }
-
     getContractProperties = async () => {
-        let {chatContract} = this.state;
-        let contractProperties = await chatContract.methods.getContractProperties().call();
+        let {Contract} = this.state;
+        let contractProperties = await Contract.methods.getContractProperties().call();
         let owner = contractProperties[0];
         let registeredUsersAddress = contractProperties[1];      
         this.setState({owner, registeredUsersAddress});
     }
 
-    displayMyAccountInfo = async () => {
-        let {web3,account} = this.state;
-        let balance = await web3.eth.getBalance(account);
-        balance =  web3.utils.fromWei(balance, 'ether');
-        this.setState({balance});
-    }
-
     checkUserRegistration = async() => {
-        let {account, chatContract,status} = this.state;
-        if(await chatContract.methods.checkUserRegistration().call({from:account})) {
+        let {account, Contract,status} = this.state;
+        if(await Contract.methods.checkUserRegistration().call({from:account})) {
             status = 'User has been registered';
         }else{
             status = 'You are new User you need to be registered now';
@@ -64,34 +42,41 @@ class CertChat extends Component {
         } 
         this.setState({status});  
     }
-
+    extraInitContract = async () => {
+        await this.getContractProperties();
+        await this.checkUserRegistration();
+        await this.getMyInboxSize();
+    }
 
     tokenContractHandler = async () => {
         await this.initWeb();
-        await this.initContract();
-        await this.getContractProperties();
-        await this.displayMyAccountInfo();
-        await this.checkUserRegistration();
-        await this.registerUser();
-        await this.getMyInboxSize();
+        await this.initContract(CHAT_TOKEN_ABI,CHAT_TOKEN_ADDRESS);
+        await this.extraInitContract();
     }
     componentDidMount = () => {
+        this.checkMetamask();
         this.tokenContractHandler();
     }
 
 
     registerUser = async () => {
-        let {account, chatContract,status} = this.state;
+        let TxId='';
+        let {account, Contract,status} = this.state;
         if(status !=='User has been registered'){
             status = "User registration:(open MetaMask->submit->wait)";
-            await chatContract.methods.registerUser().send({from: (account), gas: '1000000'},(error) => {
+            await Contract.methods.registerUser().send({from: (account), gas: '1000000'},(error,result) => {
                 if(!error){
-                    status = 'User has been registered';
-                }else{
-                  console.log("err-->"+error);
-                }  
-            });
-            var gasUsedWei = chatContract.receipt.gasUsed;
+                    TxId=result;
+                    this.notify('info','Registration is in Progress');
+                  }else{
+                    console.log(error);
+                    this.notify('error','Registration is Failed: '+error.message);
+                  }
+              
+                });
+            this.notify('success','Registration is Done: '+TxId);
+            await this.extraInitContract();
+            var gasUsedWei = Contract.receipt.gasUsed;
             status = ("User is registered...gas spent: " + gasUsedWei + "(Wei)");
             alert("A personal inbox has been established for you on the Ethereum blockchain. You're all set!");
             this.setState({status});
@@ -99,8 +84,8 @@ class CertChat extends Component {
     }
 
     getMyInboxSize = async () => {
-        let {account, chatContract, myInboxSize,display} = this.state;
-        let value = await chatContract.methods.getMyInboxSize().call({from: account});
+        let {account, Contract, myInboxSize,display} = this.state;
+        let value = await Contract.methods.getMyInboxSize().call({from: account});
         myInboxSize = value[1];
         this.setState({myInboxSize});
         if (myInboxSize > 0) {
@@ -116,7 +101,8 @@ class CertChat extends Component {
     }
 
     sendMessage = async () => {
-        let {web3,chatContract} = this.state;
+        let TxId='';
+        let {web3,Contract} = this.state;
         var receiver = document.getElementById("receiver").value;
         if (receiver === "") {
           this.setState({status: "Send address cannot be empty"});
@@ -138,20 +124,34 @@ class CertChat extends Component {
         this.setState({status: "Sending message:(open MetaMask->submit->wait)"});
 
 
-        await chatContract.methods.sendMessage(receiver, newMessage).send({from: (this.state.account), gas: '1000000'},(error,result) => {
+        await Contract.methods.sendMessage(receiver, newMessage).send({from: (this.state.account), gas: '1000000'},(error,result) => {
             if(!error){
+                TxId=result;
                 var gasUsedWei = result.receipt.gasUsed;
-                this.setState({status: "Message successfully sent...gas spent: " + gasUsedWei + " Wei"});
                 document.getElementById("message").value = "";
-            }else{
-              console.log("err-->"+error);
-            }
-        });
-      }
+                this.notify('info','Sending Message is in Progress (Gas spent: ' + gasUsedWei + " Wei");
+              }else{
+                console.log(error);
+                this.notify('error','Sending Message is Failed: '+error.message);
+              }
+            });
+            this.notify('success','Sending Message is Done: '+TxId);
+            await this.extraInitContract();
+        }
       clearInbox = async () => {
-        let {chatContract,account} = this.state;
-        this.setState({status:"Clearing inbox:(open MetaMask->submit->wait)"});
-        await chatContract.methods.clearInbox().send({from: (account), gas: '1000000'});
+        let TxId='';
+        let {Contract,account} = this.state;
+        await Contract.methods.clearInbox().send({from: (account), gas: '1000000'},(error,result) => {
+            if(!error){
+                TxId=result;
+                this.notify('info','Clearing Inbox is in Progress');
+              }else{
+                console.log(error);
+                this.notify('error','Clearing Inbox is Failed: '+error.message);
+              }
+            });
+        this.notify('success','Clearing Inbox is Done: '+TxId);
+        await this.extraInitContract();
         var clearInboxButton = document.getElementById("clearInboxButton");
         clearInboxButton.parentNode.removeChild(clearInboxButton);
       //  $("#mytable tr").remove();
@@ -161,8 +161,8 @@ class CertChat extends Component {
     }
 
       receiveMessages = async () => {
-        let {web3,chatContract,account,myInboxSize} = this.state;
-        let value = await chatContract.methods.receiveMessages().call({}, {from: account});
+        let {web3,Contract,account,myInboxSize} = this.state;
+        let value = await Contract.methods.receiveMessages().call({}, {from: account});
           var content = (value[0]);
           var timestamp = value[1];
           var sender = value[2];
@@ -207,34 +207,26 @@ class CertChat extends Component {
     }
 
     render() {
-        let {account, chatContract,registeredUsersAddress, balance,status, network, display,owner} = this.state;
+        let {account, Contract,registeredUsersAddress, balance,status, network, display,owner} = this.state;
         let messages = []; 
-        messages[0] = chatContract === '' ? 'Could Not Load' : chatContract._address;
-        messages[1] = chatContract === '' ? 'Could Not Load' : account;
-        messages[2] = chatContract === '' ? 'Could Not Load' : owner;
-        messages[3] = chatContract === '' ? '0' : balance;
+        messages[0] = Contract === '' ? 'Could Not Load' : Contract._address;
+        messages[1] = Contract === '' ? 'Could Not Load' : account;
+        messages[2] = Contract === '' ? 'Could Not Load' : owner;
+        messages[3] = Contract === '' ? '0' : balance;
         messages[3] +=' Ether';
-        messages[4] = chatContract === '' ? ['Could Not Load','Could Not Load'] : registeredUsersAddress;
+        messages[4] = Contract === '' ? ['Could Not Load','Could Not Load'] : registeredUsersAddress;
         return (
             <div>
-                <h1 >Certified Chat</h1>
-                <br />
-                <h2 >The Ethereum Messenger</h2>
-                <hr style={{borderWidth: "1px",marginTop: "-5px"}} />
-                <label className="form-label" >Contract Address:</label>
-                <br />
-                {<a id="contractAddress" href={'https://'+network+'.etherscan.io/address/'+messages[0]}  target='_blank' rel="noreferrer" type="addressLinks">{messages[0]}</a>}
-                <br /><br />
-                <label className="form-label" >Your Ethereum Address:</label>
-                <br />
-                <a id="contractOwner"  href={'https://'+network+'.etherscan.io/address/'+messages[1]}  target='_blank' rel="noreferrer" type="addressLinks">{messages[1]}</a>
-                <br /><br />
-                <label className="form-label" >ContractOwner:</label>
-                <br />
-                <a id="myAddress"  href={'https://'+network+'.etherscan.io/address/'+messages[2]}  target='_blank' rel="noreferrer" type="addressLinks">{messages[2]}</a>
-                <br /><br />
-                <label className="form-label" >Your Balance: </label>
-                <p>{messages[3]}</p>
+                        <section className="bg-light text-center">
+                        <h1>Certified Chat</h1>
+                        <HideShow 
+                            currentAccount = {this.state.currentAccount}
+                            contractAddress = {CHAT_TOKEN_ADDRESS}
+                            chainId = {this.state.chainId}
+                            owner = {owner}
+                        />
+                        </section>
+
                 <br />
 
 
@@ -242,92 +234,83 @@ class CertChat extends Component {
 
 
                 <label>User directory:</label> <br />
-                <button 
-                    className="btn btn-secondary btn-sm" 
-                    type="myDefaultButton" 
-                    label="Copy" 
-                    onClick={this.copyAddressToSend} 
-                    style={{float:"right", marginTop: "18px"}}
-                >
-                    Select
-                </button>
-                <div 
-                    style={{overflow: "hidden", paddingRight: "10px"}}>
-​                    <select
-                        type="registeredUsersAddressMenu" 
-                        id='registeredUsersAddressMenu'>
-                            {
-                                messages[4].map((registeredUsersAddress,index)=>(
-                                    <option key={index}>{registeredUsersAddress}</option>
-                                ))
-                            }
+
+                <div className='row'>
+                    <select className="form-select m-2 col" style={{"width":"auto"}} id='registeredUsersAddressMenu'>
+                        {
+                            messages[4].map((registeredUsersAddress,index)=>(
+                                <option key={index}>{registeredUsersAddress}</option>
+                            ))
+                        }
                     </select>
+                    <button 
+                        className="btn btn-primary btn-sm col-2 m-2" 
+                        onClick={this.copyAddressToSend} 
+                    >
+                        Select
+                    </button>
+                    <div class="input-group col">
+                        <div class="input-group-prepend mt-2">
+                            <span class="input-group-text">Send to: </span>
+                        </div>
+                        <input type="text" class="form-control col mt-2 mb-2"  id="receiver" spellCheck="false" readOnly={true}/>
+                    </div>
                 </div>
-                <br />
-                
-                <label>Send to:</label> <br />
-                <textarea 
-                    type="myInputTextArea" 
-                    id="receiver" 
-                    spellCheck="false"
-                    readOnly={true} 
-                    style={{width: "95%", maxLength: "42", rows: "1"}}>
-                    </textarea>
-                <br /><br />
-
-                <br /><label>Message:</label> <br />
-                <button 
-                    className="btn btn-primary btn-sm" 
-                    id='sendMessageButton'
-                    type="myDefaultButton" 
-                    label="Copy" 
-                    onClick={this.sendMessage} 
-                    style={{float:"right", marginTop: "-5px"}}
-                >
-                    Send
-                </button>
-                <div style={{overflow: "hidden", paddingRight: "10px"}}>
-                    <textarea type="messageTextArea" id="message" maxLength="30" rows="1"></textarea>​
+                <div className=''>
+                    <div class="input-group row">
+                        <div class="input-group-prepend col-10">
+                            <div class="form-group">
+                                <label for="exampleFormControlTextarea1">Messages: </label>
+                                <textarea class="form-control" id="message" rows="3"></textarea>
+                            </div>
+                        </div>
+                        <button 
+                            className="btn btn-success col-2 mt-4" 
+                            id='sendMessageButton'
+                            label="Copy" 
+                            onClick={this.sendMessage} 
+                        >
+                            Send
+                        </button>
+                    </div>
                 </div>
-
 
 
                 <div id="receivedTable" style={{display:display}}>
-                    <br /><label>Received:</label> <br />
                     <div style={{overflow: "hidden", paddingRight: "10px"}}>
-                    <textarea type="messageTextArea" id='reply'></textarea>​
+                        <label for="exampleFormControlTextarea1">Received: </label>
+                        <textarea class="form-control" id="reply" rows="3"></textarea>​
                     </div>
                     <br />
-                    <table id='mytable' style={{marginTop: "-5px"}}>
-                    <thead>
-                        <tr>
-                        <th>Date</th>
-                        <th>From</th>
-                        <th style={{show: false}}>Content</th>
-                        </tr>
-                    </thead>
-                    <tbody id="mytable-tbody">
-                    </tbody>
+
+                    <table className='table' id='mytable' >
+                        <thead class="thead">
+                            <tr>
+                                <th>Date</th>
+                                <th>From</th>
+                                <th style={{show: false}}>Content</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mytable-tbody">
+                        </tbody>
                     </table>
                     <button
+                        className='btn btn-warning m-2 col-12'
                         id = "clearInboxButton"  
-                        type = "clearInboxButton"         
-                        style = {{width : "100%", height : "30px", marginTop : "15px"}}         
+                        type = "clearInboxButton"                
                         onClick = {this.clearInbox}>
                         Clear inbox
                     </button>
 
-
                     
                 </div>
-                
+                <br />
                 
                 <label className="form-label" >Status: </label>
                 <br />
-                    <span className="badge bg-secondary">{status}</span>
+                    <span className="badge bg-primary">{status}</span>
                 <br />
-                {this.state.isMetaMask ? <span className='badge bg-primary'>MetaMask is Found</span>:<span className='badge bg-danger'>MetaMask Did not found</span>}
-                <p>{this.state.network === 'main' ? <span className='badge bg-primary'>Working on Main Ethereum Network</span>:<span className='badge bg-danger'>Working on Test {network} Network</span>}</p>
+                <br />
             </div>
         );
     }

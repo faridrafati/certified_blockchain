@@ -26,12 +26,25 @@ const NavBar = () => {
             <NavLink className="nav-item nav-link" to="/token">
               Tokens
             </NavLink>
-            <NavLink className="nav-item nav-link" to="/voting">
-              Voting
-            </NavLink>
-            <NavLink className="nav-item nav-link" to="/weightedVoting">
-              Voting(Authorized)
-            </NavLink>
+            <li className="nav-item dropdown bg-dark">
+              <a className="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Voting
+              </a>
+              <ul className="dropdown-menu bg-dark" aria-labelledby="navbarDropdown">
+                <li>
+                  <NavLink className="nav-item nav-link" to="/voting">
+                    Voting(Conventional)
+                  </NavLink>
+                </li>
+                <li>            
+                  <NavLink className="nav-item nav-link" to="/weightedVoting">
+                    Voting(Authorized)
+                  </NavLink>
+                </li>
+              </ul>
+            </li>
+
+
             <NavLink className="nav-item nav-link" to="/chat">
               Chat
             </NavLink>
@@ -50,6 +63,28 @@ const NavBar = () => {
             <NavLink className="nav-item nav-link" to="/petAdoption">
               Pet Adoption
             </NavLink>
+            <li className="nav-item dropdown bg-dark">
+              <a className="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Games
+              </a>
+              <ul className="dropdown-menu bg-dark" aria-labelledby="navbarDropdown">
+                <li>
+                  <NavLink className="nav-item nav-link" to="/guessing">
+                    Guessing Game
+                  </NavLink>
+                </li>
+                <li>            
+                  <NavLink className="nav-item nav-link" to="/petAdoption">
+                    Game #2
+                  </NavLink>
+                </li>
+                <li>            
+                  <NavLink className="nav-item nav-link" to="/petAdoption">
+                    Game #3
+                  </NavLink>
+                </li>
+              </ul>
+            </li>
           </div>
         </div>
       </nav>
