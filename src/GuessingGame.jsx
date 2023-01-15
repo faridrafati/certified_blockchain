@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React from 'react';
 import Web3 from 'web3/dist/web3.min';
 import HideShow from './HideShow';
 import resetProvider from './resetProvider';
@@ -20,7 +20,8 @@ class GuessingGame extends resetProvider {
         zeroAddress:'0x0000000000000000000000000000000000000000',
         buttonEnabled: {checking: false, inputting: false},
         guess: false,
-        amount: 0
+        amount: 0,
+        winOrLose:[]
     }
 
     componentDidMount() {
@@ -42,12 +43,44 @@ class GuessingGame extends resetProvider {
         buttonEnabled.checking=false;
         buttonEnabled.inputting=false;
         this.setState({amount : 0,buttonEnabled});
-        console.log(player);
+        await this.getEvents('PlayerWon');
+        await this.getEvents('PlayerLost');
     }
+
+    getEvents = async (eventName) => {
+        let {web3,Contract} = this.state;
+        let latest_block = await web3.eth.getBlockNumber();
+        let historical_block = latest_block - 10000; // you can also change the value to 'latest' if you have a upgraded rpc
+        console.log("latest: ", latest_block, "historical block: ", historical_block);
+        const events = await Contract.getPastEvents(
+            eventName, // change if your looking for a different event
+            { fromBlock: historical_block, toBlock: 'latest' }
+        );
+        await this.getTransferDetails(events);
+        let winOrLose = this.state.winOrLose;
+        console.log(winOrLose);
+    };
+
+    getTransferDetails = async (data_events) => {
+        let {web3,account} = this.state;
+        let winOrLose='';
+        for (let i = 0; i < data_events.length; i++) {
+            let mysteryNumber = data_events[i]['returnValues']['mysteryNumber'];
+            let player = data_events[i]['returnValues']['player'];
+            let amount = data_events[i]['returnValues']['amount'];
+            let converted_amount = web3.utils.fromWei(amount);
+            if (player === account) { 
+                winOrLose= `mysteryNumber: ${mysteryNumber} - player: ${player} - Value (eth): ${converted_amount}`;
+            }
+            this.setState({ winOrLose: [...this.state.winOrLose, winOrLose] });
+        };
+    };
+
+
     onSubmitGuess = async () => {
-        let Contract = this.state.Contract;
+        let {Contract,web3,account,amount} = this.state;
         let TxId = '';
-        await Contract.methods.winOrLose(5,this.state.guess).send({from: (this.state.account), gas: '1000000'},(error,result) => {
+        await Contract.methods.winOrLose(5,this.state.guess).send({from: (account), gas: '1000000', value: web3.utils.toWei(amount, "ether")},(error,result) => {
             if(!error){
               TxId = result;
               this.notify('info','Pending Transactions on Ethereum');
@@ -56,7 +89,7 @@ class GuessingGame extends resetProvider {
             }
         
         });
-        this.notify('success','TX is Done: '+TxId);
+        this.notify('success','TX is Done: '+TxId);        
     }
 
     onButtonClick = async (e) => {
@@ -102,7 +135,7 @@ class GuessingGame extends resetProvider {
                             </div>
                             <div className="card-body">
                                 <h5 className="card-title">Higher or Lower</h5>
-                                <p className="card-text">Will the mystery number be higher or lower than 50?</p>
+                                <p className="card-text">Will the mystery number be higher or lower than 5?</p>
                                 
                                 <input 
                                     type="radio" 
@@ -133,11 +166,11 @@ class GuessingGame extends resetProvider {
                                 </label>
  
  
-                                <div class="input-group mb-3">
-                                   <div class="input-group-prepend">
-                                        <span class="input-group-text" id="inputGroup-sizing-default">Ether</span>
+                                <div className="input-group mb-3">
+                                   <div className="input-group-prepend">
+                                        <span className="input-group-text" id="inputGroup-sizing-default">Ether</span>
                                     </div>
-                                    <input type="number" value={amount} class="form-control" aria-label="Default" aria-describedby="inputGroup-sizing-default" onChange={this.changeHandler}/> 
+                                    <input type="number" value={amount} className="form-control" aria-label="Default" aria-describedby="inputGroup-sizing-default" onChange={this.changeHandler}/> 
                                 </div>
                                 <button className="btn btn-primary" disabled = {!((buttonEnabled.checking)&&(buttonEnabled.inputting))} onClick={this.onSubmitGuess}>Check Your Chance</button>
                             </div>
