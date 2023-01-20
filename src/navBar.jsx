@@ -24,7 +24,7 @@ const NavBar = () => {
         <div className="collapse navbar-collapse" id="navbarNavAltMarkup">
           <div className="navbar-nav">
             <li className="nav-item dropdown bg-dark">
-              <a className="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <a className="nav-link dropdown-toggle"  id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                 Tokens
               </a>
               <ul className="dropdown-menu bg-dark" aria-labelledby="navbarDropdown">
@@ -41,7 +41,7 @@ const NavBar = () => {
               </ul>
             </li>
             <li className="nav-item dropdown bg-dark">
-              <a className="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <a className="nav-link dropdown-toggle" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                 Voting
               </a>
               <ul className="dropdown-menu bg-dark" aria-labelledby="navbarDropdown">
@@ -78,7 +78,7 @@ const NavBar = () => {
               Pet Adoption
             </NavLink>
             <li className="nav-item dropdown bg-dark">
-              <a className="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <a className="nav-link dropdown-toggle" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                 Games
               </a>
               <ul className="dropdown-menu bg-dark" aria-labelledby="navbarDropdown">

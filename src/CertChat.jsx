@@ -1,4 +1,4 @@
-import React, { Component} from 'react';
+import React from 'react';
 import Web3 from 'web3/dist/web3.min';
 import {CHAT_TOKEN_ABI,CHAT_TOKEN_ADDRESS} from './components/ChatConfig';
 import resetProvider from './resetProvider';
@@ -207,7 +207,7 @@ class CertChat extends resetProvider {
     }
 
     render() {
-        let {account, Contract,registeredUsersAddress, balance,status, network, display,owner} = this.state;
+        let {account, Contract,registeredUsersAddress, balance,status, display,owner} = this.state;
         let messages = []; 
         messages[0] = Contract === '' ? 'Could Not Load' : Contract._address;
         messages[1] = Contract === '' ? 'Could Not Load' : account;

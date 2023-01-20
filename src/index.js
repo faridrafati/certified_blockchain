@@ -7,7 +7,6 @@ import {HashRouter} from 'react-router-dom';
 import "bootstrap/dist/css/bootstrap.css";
 import 'bootstrap/dist/js/bootstrap.bundle';
 import "font-awesome/css/font-awesome.css";
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 ReactDOM.render(
  <HashRouter>
