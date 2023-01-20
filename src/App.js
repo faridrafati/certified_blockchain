@@ -15,8 +15,9 @@ import PetShop from './petShop';
 import ModalForm from './modalForm';
 import resetProvider from './resetProvider';
 import { ToastContainer } from 'react-toastify';
-  import 'react-toastify/dist/ReactToastify.css';
+import 'react-toastify/dist/ReactToastify.css';
 import GuessingGame from './GuessingGame';
+import CrowdSale from './crowdSale';
 
 
 class App extends resetProvider {
@@ -34,6 +35,7 @@ class App extends resetProvider {
     <main className='container'>
       <Switch>
         <Route path="/token" component={CoderToken}/>
+        <Route path="/crowdSale" component={CrowdSale}/>
         <Route path="/voting" component={VotingContract} />
         <Route path="/weightedVoting" component={WeightedVoting} />
         <Route path="/chat" component={CertChat} />

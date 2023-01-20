@@ -23,9 +23,23 @@ const NavBar = () => {
         </button>
         <div className="collapse navbar-collapse" id="navbarNavAltMarkup">
           <div className="navbar-nav">
-            <NavLink className="nav-item nav-link" to="/token">
-              Tokens
-            </NavLink>
+            <li className="nav-item dropdown bg-dark">
+              <a className="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Tokens
+              </a>
+              <ul className="dropdown-menu bg-dark" aria-labelledby="navbarDropdown">
+                <li>
+                  <NavLink className="nav-item nav-link" to="/token">
+                    Tokens Wallet
+                  </NavLink>
+                </li>
+                <li>            
+                  <NavLink className="nav-item nav-link" to="/crowdSale">
+                    Tokens CrowdSale
+                  </NavLink>
+                </li>
+              </ul>
+            </li>
             <li className="nav-item dropdown bg-dark">
               <a className="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                 Voting
