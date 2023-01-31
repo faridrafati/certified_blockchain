@@ -58,10 +58,24 @@ const NavBar = () => {
               </ul>
             </li>
 
+            <li className="nav-item dropdown bg-dark">
+              <a className="nav-link dropdown-toggle" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Chat
+              </a>
+              <ul className="dropdown-menu bg-dark" aria-labelledby="navbarDropdown">
+                <li>
+                  <NavLink className="nav-item nav-link" to="/chat">
+                    Cert Chat
+                  </NavLink>
+                </li>
+                <li>            
+                  <NavLink className="nav-item nav-link" to="/chatBox">
+                    Chat Box
+                  </NavLink>
+                </li>
+              </ul>
+            </li>
 
-            <NavLink className="nav-item nav-link" to="/chat">
-              Chat
-            </NavLink>
             <NavLink className="nav-item nav-link" to="/todo">
               Todo List
             </NavLink>

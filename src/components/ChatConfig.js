@@ -1,4 +1,4 @@
-export const CHAT_TOKEN_ADDRESS = '0xb2e0eAa82E5232BDE6DF118515da06852C34A030';//'0x16660c5822B837e3Db7D4d1aC774DfB5E4f9fCAb';
+export const CHAT_TOKEN_ADDRESS = '0x51860e109c809b9d86e5deb3349d039b31e7ee6c';//'0x16660c5822B837e3Db7D4d1aC774DfB5E4f9fCAb';
 export const CHAT_TOKEN_ABI = [
 	{
 		"constant": false,
@@ -7,6 +7,28 @@ export const CHAT_TOKEN_ABI = [
 		"outputs": [],
 		"payable": false,
 		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "sentMessages",
+		"outputs": [
+			{
+				"name": "",
+				"type": "bytes32[16]"
+			},
+			{
+				"name": "",
+				"type": "uint256[]"
+			},
+			{
+				"name": "",
+				"type": "address[]"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
 		"type": "function"
 	},
 	{

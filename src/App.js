@@ -18,6 +18,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import GuessingGame from './GuessingGame';
 import CrowdSale from './crowdSale';
+import ChatBox from './chatBox';
 
 
 class App extends resetProvider {
@@ -39,6 +40,7 @@ class App extends resetProvider {
         <Route path="/voting" component={VotingContract} />
         <Route path="/weightedVoting" component={WeightedVoting} />
         <Route path="/chat" component={CertChat} />
+        <Route path="/chatBox" component={ChatBox} />
         <Route path="/todo" component={Task} />
         <Route path="/auction" component={Auction} />
         <Route path="/certificate" component={Certificate} />

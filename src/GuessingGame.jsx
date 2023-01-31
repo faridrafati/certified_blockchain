@@ -21,10 +21,11 @@ class GuessingGame extends resetProvider {
         buttonEnabled: {checking: false, inputting: false},
         guess: false,
         amount: 0,
-        winOrLose:[]
+        winEvents:[],
+        loseEvents:[]
     }
 
-    componentDidMount() {
+    componentDidMount = () =>{
         this.checkMetamask();
         this.tokenContractHandler();
     }
@@ -43,37 +44,56 @@ class GuessingGame extends resetProvider {
         buttonEnabled.checking=false;
         buttonEnabled.inputting=false;
         this.setState({amount : 0,buttonEnabled});
-        await this.getEvents('PlayerWon');
-        await this.getEvents('PlayerLost');
+        let winEvents = await this.getEvents('PlayerWon',2684784);
+        let loseEvents = await this.getEvents('PlayerLost',2684784);
+
+        this.setState({winEvents, loseEvents});
     }
 
-    getEvents = async (eventName) => {
+    getEvents = async (eventName,blockNumberOfContract) => {
         let {web3,Contract} = this.state;
         let latest_block = await web3.eth.getBlockNumber();
-        let historical_block = latest_block - 10000; // you can also change the value to 'latest' if you have a upgraded rpc
-        console.log("latest: ", latest_block, "historical block: ", historical_block);
-        const events = await Contract.getPastEvents(
-            eventName, // change if your looking for a different event
-            { fromBlock: historical_block, toBlock: 'latest' }
-        );
-        await this.getTransferDetails(events);
-        let winOrLose = this.state.winOrLose;
-        console.log(winOrLose);
+        let historical_block = blockNumberOfContract;//latest_block - 10000; // you can also change the value to 'latest' if you have a upgraded rpc
+        const events = await Contract.getPastEvents(eventName, {
+            filter: {}, // Using an array means OR: e.g. 20 or 23
+            fromBlock: historical_block,
+            toBlock: latest_block
+        }, function(error){ 
+            if(error){
+                console.log(error); 
+            }
+        });
+        let winOrLose = await this.getTransferDetails(events,eventName);
+        return winOrLose;
     };
 
-    getTransferDetails = async (data_events) => {
+    getTransferDetails = async (data_events,eventName) => {
         let {web3,account} = this.state;
-        let winOrLose='';
+        let winOrLose=[];
         for (let i = 0; i < data_events.length; i++) {
             let mysteryNumber = data_events[i]['returnValues']['mysteryNumber'];
             let player = data_events[i]['returnValues']['player'];
             let amount = data_events[i]['returnValues']['amount'];
             let converted_amount = web3.utils.fromWei(amount);
-            if (player === account) { 
-                winOrLose= `mysteryNumber: ${mysteryNumber} - player: ${player} - Value (eth): ${converted_amount}`;
+            if(player === account) {
+                if(eventName==='PlayerWon'){
+                    if(mysteryNumber>5){
+                        winOrLose.push(`${converted_amount} (eth) by guessing 5 would be higher than: ${mysteryNumber}`);
+                    } else {
+                        winOrLose.push(`${converted_amount} (eth) by guessing 5 would be lower than or equal: ${mysteryNumber}`);
+                    }
+                } else {
+                    if(mysteryNumber<=5){
+                        winOrLose.push(`${converted_amount} (eth) by guessing 5 would be higher than: ${mysteryNumber}`);
+                    } else {
+                        winOrLose.push(`${converted_amount} (eth) by guessing 5 would be lower than or equal: ${mysteryNumber}`);
+                    }
+                }
+
+                
             }
-            this.setState({ winOrLose: [...this.state.winOrLose, winOrLose] });
         };
+        return winOrLose;
     };
 
 
@@ -89,7 +109,8 @@ class GuessingGame extends resetProvider {
             }
         
         });
-        this.notify('success','TX is Done: '+TxId);        
+        this.notify('success','TX is Done: '+TxId);
+        this.getPlayersData();        
     }
 
     onButtonClick = async (e) => {
@@ -115,7 +136,7 @@ class GuessingGame extends resetProvider {
     } 
     
     render() {
-        let {owner,amount,buttonEnabled} = this.state; 
+        let {owner,amount,buttonEnabled,winEvents,loseEvents} = this.state;
         return (
             <div className="row">
                 <section className="bg-light text-center">
@@ -128,7 +149,7 @@ class GuessingGame extends resetProvider {
                     />
                 </section>
                 <div className="row">
-                    <div className="col-6 col-md-8 offset-md-2">
+                    <div className="col-6 col-md-8 offset-md-2 mt-2">
                         <div className="card text-center">
                             <div className="card-header">
                                 Betting Window
@@ -173,6 +194,38 @@ class GuessingGame extends resetProvider {
                                     <input type="number" value={amount} className="form-control" aria-label="Default" aria-describedby="inputGroup-sizing-default" onChange={this.changeHandler}/> 
                                 </div>
                                 <button className="btn btn-primary" disabled = {!((buttonEnabled.checking)&&(buttonEnabled.inputting))} onClick={this.onSubmitGuess}>Check Your Chance</button>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+                <div className="row mt-3">
+                    <div className="col-lg-6 col-md-8 offset-md-2 offset-lg-0">
+                        <div className="card  bg-success bg-opacity-10 ">
+                            <div className="card-header text-center ">
+                                <b>Wins</b>
+                            </div>
+                            <div className="card-body ">
+                                {winEvents.map((events,index) =>(
+                                    <li key={index}>
+                                        You win {events}
+                                    </li>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                    <div className="col-lg-6 col-md-8 offset-md-2 offset-lg-0">
+                        <div className="card  bg-danger bg-opacity-10">
+                            <div className="card-header text-center ">
+                                <b>Losses</b>
+                            </div>
+                            <div className="card-body">
+                                {loseEvents.map((events,index) =>(
+                                    <li key={index}>
+                                        You lose {events}
+                                    </li>
+                                ))}
+
                             </div>
                         </div>
                     </div>

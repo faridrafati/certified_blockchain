@@ -15,8 +15,10 @@ class CertChat extends resetProvider {
         balance: 0,
         status:'',
         myInboxSize : 0,
+        myOutboxSize: 0,
         selectedAddress:'',
         display: 'none',
+        newMessage:'',
     }
 
     getContractProperties = async () => {
@@ -46,6 +48,7 @@ class CertChat extends resetProvider {
         await this.getContractProperties();
         await this.checkUserRegistration();
         await this.getMyInboxSize();
+        await this.getMyOutboxSize();
     }
 
     tokenContractHandler = async () => {
@@ -91,54 +94,66 @@ class CertChat extends resetProvider {
         if (myInboxSize > 0) {
             display = "inline";
             this.setState({display});
-
             return this.receiveMessages();
-        } else {
+        } /*else {
             display = "none";
             this.setState({display});
             return null;
-        }
+        }*/
+    }
+
+    getMyOutboxSize = async () => {
+        let {account, Contract, myOutboxSize,display} = this.state;
+        let value = await Contract.methods.getMyInboxSize().call({from: account});
+        myOutboxSize = value[0];
+        this.setState({myOutboxSize});
+        if (myOutboxSize > 0) {
+            display = "inline";
+            this.setState({display});
+            return this.sentMessages();
+        } /*else {
+            display = "none";
+            this.setState({display});
+            return null;
+        }*/
     }
 
     sendMessage = async () => {
+        let {newMessage} = this.state;
         let TxId='';
         let {web3,Contract} = this.state;
         var receiver = document.getElementById("receiver").value;
         if (receiver === "") {
-          this.setState({status: "Send address cannot be empty"});
-          return null;
+            this.setState({status: "Send address cannot be empty"});
+            return null;
         }
         if (!web3.utils.isAddress(receiver)) {
             this.setState({status: "You did not enter a valid Ethereum address"});
-          return null;
+            return null;
         }
-        var newMessage = document.getElementById("message").value;
         if (newMessage === "") {
-            newMessage = 'hello'
             this.setState({status: "Oops! Message is empty"});
           //return null;
         }
         newMessage = web3.utils.fromAscii(newMessage);
-        document.getElementById("message").value = "";
+
         document.getElementById("sendMessageButton").disabled = true;
         this.setState({status: "Sending message:(open MetaMask->submit->wait)"});
-
-
         await Contract.methods.sendMessage(receiver, newMessage).send({from: (this.state.account), gas: '1000000'},(error,result) => {
             if(!error){
                 TxId=result;
                 var gasUsedWei = result.receipt.gasUsed;
-                document.getElementById("message").value = "";
                 this.notify('info','Sending Message is in Progress (Gas spent: ' + gasUsedWei + " Wei");
               }else{
                 console.log(error);
                 this.notify('error','Sending Message is Failed: '+error.message);
               }
-            });
-            this.notify('success','Sending Message is Done: '+TxId);
-            await this.extraInitContract();
-        }
-      clearInbox = async () => {
+        });
+        this.setState({newMessage:""});
+        this.notify('success','Sending Message is Done: '+TxId);
+        await this.extraInitContract();
+    }
+    clearInbox = async () => {
         let TxId='';
         let {Contract,account} = this.state;
         await Contract.methods.clearInbox().send({from: (account), gas: '1000000'},(error,result) => {
@@ -160,7 +175,7 @@ class CertChat extends resetProvider {
         this.setState({status: "Inbox cleared"});
     }
 
-      receiveMessages = async () => {
+    receiveMessages = async () => {
         let {web3,Contract,account,myInboxSize} = this.state;
         let value = await Contract.methods.receiveMessages().call({}, {from: account});
           var content = (value[0]);
@@ -168,7 +183,7 @@ class CertChat extends resetProvider {
           var sender = value[2];
 
           for (var m = 0; m < myInboxSize; m++) {
-            var tbody = document.getElementById("mytable-tbody");
+            var tbody = document.getElementById("mytable-receive");
             var row = tbody.insertRow();
             var cell1 = row.insertCell();
             let date = new Date(parseInt(timestamp[m])).toLocaleDateString("en-US");
@@ -194,6 +209,42 @@ class CertChat extends resetProvider {
         }
     }
 
+    sentMessages = async () => {
+        let {web3,Contract,account,myOutboxSize} = this.state;
+        let value = await Contract.methods.sentMessages().call({}, {from: account});
+        var content = (value[0]);
+        var timestamp = value[1];
+        var receiver = value[2];
+
+        for (var m = 0; m < myOutboxSize; m++) {
+            var tbody = document.getElementById("mytable-sent");
+            var row = tbody.insertRow();
+            var cell1 = row.insertCell();
+            let date = new Date(parseInt(timestamp[m])).toLocaleDateString("en-US");
+            let time = new Date(parseInt(timestamp[m])).toLocaleTimeString("en-US");
+            cell1.innerHTML = date+"<br />" +time; 
+            var cell2 = row.insertCell();
+            cell2.innerHTML = receiver[m];
+            var cell3 = row.insertCell();
+
+            var thisRowReceivedText = content[m].toString();
+            var receivedAscii = web3.utils.toAscii(thisRowReceivedText);
+            cell3.innerHTML = receivedAscii;
+            cell3.hidden = false;
+        }
+
+        var table = document.getElementById("mytable");
+        var rows = table.rows;
+
+        for (var i = 1; i < rows.length; i++) {
+            rows[i].onclick = (function(e) {
+                var thisRowContent = (this.cells[2].innerHTML);
+                document.getElementById("reply").innerHTML = thisRowContent;
+                document.getElementById("receiver").value = this.cells[1].innerHTML;
+            });
+        }
+    }
+
     
     copyAddressToSend = () => {
         var sel = document.getElementById("registeredUsersAddressMenu");
@@ -206,8 +257,15 @@ class CertChat extends resetProvider {
         console.log( this.state.replyToAddress);
     }
 
+    changeHandler = (e) => {
+        let {newMessage} = this.state;
+        let {id, value} = e.currentTarget;
+        newMessage = value ;
+        //id ==="message" ? newMessage = value : amount = value;
+        this.setState({newMessage});
+    }
     render() {
-        let {account, Contract,registeredUsersAddress, balance,status, display,owner} = this.state;
+        let {account, Contract,registeredUsersAddress, balance,status, display,owner,myInboxSize,myOutboxSize,newMessage} = this.state;
         let messages = []; 
         messages[0] = Contract === '' ? 'Could Not Load' : Contract._address;
         messages[1] = Contract === '' ? 'Could Not Load' : account;
@@ -217,21 +275,17 @@ class CertChat extends resetProvider {
         messages[4] = Contract === '' ? ['Could Not Load','Could Not Load'] : registeredUsersAddress;
         return (
             <div>
-                        <section className="bg-light text-center">
-                        <h1>Certified Chat</h1>
-                        <HideShow 
-                            currentAccount = {this.state.currentAccount}
-                            contractAddress = {CHAT_TOKEN_ADDRESS}
-                            chainId = {this.state.chainId}
-                            owner = {owner}
-                        />
-                        </section>
+                <section className="bg-light text-center">
+                    <h1>Certified Chat</h1>
+                    <HideShow 
+                        currentAccount = {this.state.currentAccount}
+                        contractAddress = {CHAT_TOKEN_ADDRESS}
+                        chainId = {this.state.chainId}
+                        owner = {owner}
+                    />
+                </section>
 
                 <br />
-
-
-
-
 
                 <label>User directory:</label> <br />
 
@@ -249,19 +303,25 @@ class CertChat extends resetProvider {
                     >
                         Select
                     </button>
-                    <div class="input-group col">
-                        <div class="input-group-prepend mt-2">
-                            <span class="input-group-text">Send to: </span>
+                    <div className="input-group col">
+                        <div className="input-group-prepend mt-2">
+                            <span className="input-group-text">Send to: </span>
                         </div>
-                        <input type="text" class="form-control col mt-2 mb-2"  id="receiver" spellCheck="false" readOnly={true}/>
+                        <input type="text" className="form-control col mt-2 mb-2"  id="receiver" spellCheck="false" readOnly={true}/>
                     </div>
                 </div>
                 <div className=''>
-                    <div class="input-group row">
-                        <div class="input-group-prepend col-10">
-                            <div class="form-group">
-                                <label for="exampleFormControlTextarea1">Messages: </label>
-                                <textarea class="form-control" id="message" rows="3"></textarea>
+                    <div className="input-group row">
+                        <div className="input-group-prepend col-10">
+                            <div className="form-group">
+                                <label htmlFor="exampleFormControlTextarea1">Messages: </label>
+                                <textarea 
+                                    className="form-control" 
+                                    id="message" 
+                                    rows="3" 
+                                    value={newMessage} 
+                                    onChange={this.changeHandler}>
+                                </textarea>
                             </div>
                         </div>
                         <button 
@@ -278,22 +338,35 @@ class CertChat extends resetProvider {
 
                 <div id="receivedTable" style={{display:display}}>
                     <div style={{overflow: "hidden", paddingRight: "10px"}}>
-                        <label for="exampleFormControlTextarea1">Received: </label>
-                        <textarea class="form-control" id="reply" rows="3"></textarea>​
+                        <label htmlFor="exampleFormControlTextarea1">Received: </label>
+                        <textarea className="form-control" id="reply" rows="3"></textarea>​
                     </div>
                     <br />
 
-                    <table className='table' id='mytable' >
-                        <thead class="thead">
+                    {myInboxSize === 0 ?<div></div>:<table className='table' id='mytable' >
+                        <thead className="thead">
                             <tr>
                                 <th>Date</th>
                                 <th>From</th>
                                 <th style={{show: false}}>Content</th>
                             </tr>
                         </thead>
-                        <tbody id="mytable-tbody">
+                        <tbody id="mytable-receive">
                         </tbody>
-                    </table>
+                    </table>}
+
+                    {myOutboxSize === 0 ?<div></div>:<table className='table' id='mytable' >
+                        <thead className="thead">
+                            <tr>
+                                <th>Date</th>
+                                <th>To</th>
+                                <th style={{show: false}}>Content</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mytable-sent">
+                        </tbody>
+                    </table>}
+
                     <button
                         className='btn btn-warning m-2 col-12'
                         id = "clearInboxButton"  

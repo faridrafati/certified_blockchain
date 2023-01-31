@@ -184,7 +184,7 @@ class BlockchainPoll extends resetProvider {
         return (
             <div>
                 <section className="bg-light text-center">
-                    <h1>Auction App</h1>
+                    <h1>Polling App</h1>
                     <HideShow 
                         currentAccount = {this.state.currentAccount}
                         contractAddress = {POLL_CONTRACT_ADDRESS}
